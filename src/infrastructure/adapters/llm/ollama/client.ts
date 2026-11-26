@@ -317,6 +317,7 @@ function validateResponse(response: ChatResponse): void {
   if (
     response === null
     || typeof response !== 'object'
+    || typeof response.done !== 'boolean'
     || response.message === null
     || typeof response.message !== 'object'
     || typeof response.message.content !== 'string'
