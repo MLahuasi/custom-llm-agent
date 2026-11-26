@@ -6,7 +6,13 @@ import type {
   LlmRequest,
   LlmResponse,
 } from '../../../../application/index.js';
-import { mapMessages, mapToolCalls, mapTools } from './mappers.js';
+import {
+  mapMessages,
+  mapToolCalls,
+  mapToolResult,
+  mapTools,
+} from './mappers.js';
+import { executeToolCalls } from '../tool-executor.js';
 
 const PROVIDER_ERROR_CODE = 'LLM_PROVIDER_ERROR';
 
@@ -25,36 +31,91 @@ export class GeminiClient implements LlmClient {
     );
     const tools = mapTools(request.tools);
 
-    // Validate shared limits at the adapter boundary even before iterative tool
-    // continuation is added in the following implementation step.
+    // Validate shared limits at the adapter boundary before entering the loop.
     const defaults = getLlmDefaults();
-    normalizeLimit(request.maxIterations, defaults.maxIterations, 'maxIterations');
-    normalizeLimit(request.maxToolCalls, defaults.maxToolCalls, 'maxToolCalls');
-
-    const response = await this.generateContent(
-      mappedMessages.contents,
-      mappedMessages.systemInstruction,
-      tools,
-      request.maxTokens,
+    const maxIterations = normalizeLimit(
+      request.maxIterations,
+      defaults.maxIterations,
+      'maxIterations',
     );
-    const text = normalizeText(response.text ?? '');
-    const functionCalls = response.functionCalls ?? [];
-    const mappedCalls = mapToolCalls(functionCalls);
+    const maxToolCalls = normalizeLimit(
+      request.maxToolCalls,
+      defaults.maxToolCalls,
+      'maxToolCalls',
+    );
 
-    if (text.length === 0 && mappedCalls.length === 0) {
-      throw new AppError('The LLM returned an empty response.', 'LLM_EMPTY_RESPONSE');
+    const contents = [...mappedMessages.contents];
+    const textParts: string[] = [];
+    const toolsUsed = new Set<string>();
+    const seenToolCalls = new Set<string>();
+    let providerRequests = 0;
+    let inputTokens = 0;
+    let outputTokens = 0;
+    let toolCallCount = 0;
+
+    for (let iteration = 0; iteration < maxIterations; iteration += 1) {
+      const response = await this.generateContent(
+        contents,
+        mappedMessages.systemInstruction,
+        tools,
+        request.maxTokens,
+      );
+      providerRequests += 1;
+      inputTokens += normalizeTokenCount(response.usageMetadata?.promptTokenCount);
+      outputTokens += normalizeTokenCount(response.usageMetadata?.candidatesTokenCount);
+
+      const responseText = normalizeText(response.text ?? '');
+      if (responseText.length > 0) {
+        textParts.push(responseText);
+      }
+
+      const functionCalls = response.functionCalls ?? [];
+      const mappedCalls = mapToolCalls(functionCalls);
+      toolCallCount += mappedCalls.length;
+      mappedCalls.forEach((call) => toolsUsed.add(call.name));
+
+      if (mappedCalls.length === 0) {
+        const text = normalizeText(textParts.join(' '));
+        if (text.length === 0) {
+          throw new AppError('The LLM returned an empty response.', 'LLM_EMPTY_RESPONSE');
+        }
+
+        return {
+          text,
+          usage: { providerRequests, inputTokens, outputTokens },
+          toolsUsed: [...toolsUsed],
+          toolCallCount,
+        };
+      }
+
+      if (toolCallCount > maxToolCalls) {
+        throw new AppError(
+          'The maximum number of tool calls was exceeded.',
+          'LLM_MAX_TOOL_CALLS_EXCEEDED',
+        );
+      }
+
+      if (iteration === maxIterations - 1) {
+        throw new AppError(
+          'The maximum number of LLM iterations was exceeded.',
+          'LLM_MAX_ITERATIONS_EXCEEDED',
+        );
+      }
+
+      contents.push(modelContent(response, functionCalls));
+      const results = await executeToolCalls(
+        mappedCalls,
+        request.tools ?? [],
+        request.toolExecutor,
+        seenToolCalls,
+      );
+      contents.push({ role: 'user', parts: results.map(mapToolResult) });
     }
 
-    return {
-      text,
-      usage: {
-        providerRequests: 1,
-        inputTokens: normalizeTokenCount(response.usageMetadata?.promptTokenCount),
-        outputTokens: normalizeTokenCount(response.usageMetadata?.candidatesTokenCount),
-      },
-      toolsUsed: mappedCalls.map((call) => call.name),
-      toolCallCount: mappedCalls.length,
-    };
+    throw new AppError(
+      'The maximum number of LLM iterations was exceeded.',
+      'LLM_MAX_ITERATIONS_EXCEEDED',
+    );
   }
 
   public async stream(request: LlmRequest): Promise<LlmResponse> {
@@ -65,53 +126,117 @@ export class GeminiClient implements LlmClient {
     );
     const tools = mapTools(request.tools);
     const defaults = getLlmDefaults();
-    normalizeLimit(request.maxIterations, defaults.maxIterations, 'maxIterations');
-    normalizeLimit(request.maxToolCalls, defaults.maxToolCalls, 'maxToolCalls');
+    const maxIterations = normalizeLimit(
+      request.maxIterations,
+      defaults.maxIterations,
+      'maxIterations',
+    );
+    const maxToolCalls = normalizeLimit(
+      request.maxToolCalls,
+      defaults.maxToolCalls,
+      'maxToolCalls',
+    );
 
     try {
-      const stream = await this.generateContentStream(
-        mappedMessages.contents,
-        mappedMessages.systemInstruction,
-        tools,
-        request.maxTokens,
-      );
-      const callbackPromises: Promise<unknown>[] = [];
+      const contents = [...mappedMessages.contents];
       const textParts: string[] = [];
-      const functionCalls = [] as NonNullable<GenerateContentResponse['functionCalls']>;
+      const toolsUsed = new Set<string>();
+      const seenToolCalls = new Set<string>();
+      let providerRequests = 0;
       let inputTokens = 0;
       let outputTokens = 0;
+      let toolCallCount = 0;
 
-      for await (const chunk of stream) {
-        const text = chunk.text ?? '';
-        if (text.length > 0) {
-          textParts.push(text);
-          if (request.onChunk !== undefined) {
-            callbackPromises.push(Promise.resolve(request.onChunk(text)));
+      for (let iteration = 0; iteration < maxIterations; iteration += 1) {
+        const stream = await this.generateContentStream(
+          contents,
+          mappedMessages.systemInstruction,
+          tools,
+          request.maxTokens,
+        );
+        const callbackPromises: Promise<unknown>[] = [];
+        const functionCalls = [] as NonNullable<GenerateContentResponse['functionCalls']>;
+        const modelParts: NonNullable<Content['parts']> = [];
+
+        for await (const chunk of stream) {
+          const text = chunk.text ?? '';
+          if (text.length > 0) {
+            textParts.push(text);
+            if (request.onChunk !== undefined) {
+              callbackPromises.push(Promise.resolve(request.onChunk(text)));
+            }
+          }
+
+          if (chunk.functionCalls !== undefined) {
+            functionCalls.push(...chunk.functionCalls);
+          }
+
+          const chunkParts = chunk.candidates?.[0]?.content?.parts;
+          if (chunkParts !== undefined) {
+            modelParts.push(...chunkParts);
+          }
+
+          if (chunk.usageMetadata?.promptTokenCount !== undefined) {
+            inputTokens = normalizeTokenCount(chunk.usageMetadata.promptTokenCount);
+          }
+          if (chunk.usageMetadata?.candidatesTokenCount !== undefined) {
+            outputTokens = normalizeTokenCount(chunk.usageMetadata.candidatesTokenCount);
           }
         }
 
-        if (chunk.functionCalls !== undefined) {
-          functionCalls.push(...chunk.functionCalls);
+        await Promise.all(callbackPromises);
+        providerRequests += 1;
+        const mappedCalls = mapToolCalls(functionCalls);
+        toolCallCount += mappedCalls.length;
+        mappedCalls.forEach((call) => toolsUsed.add(call.name));
+
+        if (mappedCalls.length === 0) {
+          const text = normalizeText(textParts.join(''));
+          if (text.length === 0) {
+            throw new AppError('The LLM returned an empty response.', 'LLM_EMPTY_RESPONSE');
+          }
+
+          return {
+            text,
+            usage: { providerRequests, inputTokens, outputTokens },
+            toolsUsed: [...toolsUsed],
+            toolCallCount,
+          };
         }
 
-        inputTokens = normalizeTokenCount(chunk.usageMetadata?.promptTokenCount);
-        outputTokens = normalizeTokenCount(chunk.usageMetadata?.candidatesTokenCount);
+        if (toolCallCount > maxToolCalls) {
+          throw new AppError(
+            'The maximum number of tool calls was exceeded.',
+            'LLM_MAX_TOOL_CALLS_EXCEEDED',
+          );
+        }
+
+        if (iteration === maxIterations - 1) {
+          throw new AppError(
+            'The maximum number of LLM iterations was exceeded.',
+            'LLM_MAX_ITERATIONS_EXCEEDED',
+          );
+        }
+
+        contents.push({
+          role: 'model',
+          parts: modelParts.length > 0
+            ? modelParts
+            : functionCalls.map((functionCall) => ({ functionCall })),
+        });
+        const results = await executeToolCalls(
+          mappedCalls,
+          request.tools ?? [],
+          request.toolExecutor,
+          seenToolCalls,
+        );
+        contents.push({ role: 'user', parts: results.map(mapToolResult) });
       }
 
-      await Promise.all(callbackPromises);
-
-      const text = normalizeText(textParts.join(''));
-      const mappedCalls = mapToolCalls(functionCalls);
-      if (text.length === 0 && mappedCalls.length === 0) {
-        throw new AppError('The LLM returned an empty response.', 'LLM_EMPTY_RESPONSE');
-      }
-
-      return {
-        text,
-        usage: { providerRequests: 1, inputTokens, outputTokens },
-        toolsUsed: mappedCalls.map((call) => call.name),
-        toolCallCount: mappedCalls.length,
-      };
+      throw new AppError(
+        'The maximum number of LLM iterations was exceeded.',
+        'LLM_MAX_ITERATIONS_EXCEEDED',
+      );
     } catch (error) {
       if (error instanceof AppError) {
         throw error;
@@ -184,6 +309,21 @@ function normalizeLimit(value: number | undefined, fallback: number, name: strin
   }
 
   return limit;
+}
+
+function modelContent(
+  response: GenerateContentResponse,
+  functionCalls: NonNullable<GenerateContentResponse['functionCalls']>,
+): Content {
+  const responseContent = response.candidates?.[0]?.content;
+  if (responseContent?.parts !== undefined && responseContent.parts.length > 0) {
+    return { role: 'model', parts: responseContent.parts };
+  }
+
+  return {
+    role: 'model',
+    parts: functionCalls.map((functionCall) => ({ functionCall })),
+  };
 }
 
 function normalizeTokenCount(value: unknown): number {
