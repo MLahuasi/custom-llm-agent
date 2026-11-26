@@ -1,6 +1,6 @@
 # SPEC 05 — Cliente Groq
 
-> **Estado:** Draft
+> **Estado:** Aprobado
 > **Depende de:** SPEC 04
 > **Fecha:** 2026-11-26
 > **Objetivo:** Implementar el adaptador Groq compatible con el puerto común LLM para chat, streaming, historial, tools iterativas, métricas y errores normalizados.
@@ -57,13 +57,26 @@
 
 ## Riesgos
 
-| Riesgo | Mitigación |
-| --- | --- |
-| Argumentos JSON llegan en varios fragmentos | Acumular por índice y parsear solo al finalizar la iteración. |
-| Usage no llega en todos los chunks | Usar el usage final disponible y validar la respuesta textual. |
+| Riesgo                                      | Mitigación                                                     |
+| ------------------------------------------- | -------------------------------------------------------------- |
+| Argumentos JSON llegan en varios fragmentos | Acumular por índice y parsear solo al finalizar la iteración.  |
+| Usage no llega en todos los chunks          | Usar el usage final disponible y validar la respuesta textual. |
 
 ## Lo que **no** está incluido en este spec
 
 - Ollama.
 - Embeddings, audio, RAG y persistencia.
 - Casos de uso y CLI.
+
+---
+
+Plan
+
+1. Crear carpeta y barrel de groq.
+2. Implementar mappers.
+3. Implementar chat no streaming.
+4. Implementar streaming y acumulación de argumentos.
+5. Continuar historial con mensajes assistant/tool.
+6. Normalizar usage, límites y errores.
+7. Añadir pruebas unitarias.
+8. Actualizar documentación y barrels superiores.
