@@ -1,6 +1,6 @@
 # SPEC 04 — Cliente Gemini
 
-> **Estado:** Draft
+> **Estado:** Aprobado
 > **Depende de:** SPEC 03
 > **Fecha:** 2026-11-26
 > **Objetivo:** Implementar el adaptador Gemini compatible con el puerto común LLM para chat, streaming, historial, tools iterativas, métricas y errores normalizados.
@@ -59,13 +59,26 @@
 
 ## Riesgos
 
-| Riesgo | Mitigación |
-| --- | --- |
-| Diferencias entre `Content` y mensajes neutrales | Mapper dedicado y pruebas de ida y vuelta del historial. |
-| Usage metadata ausente en algunos streams | Usar valores seguros y marcar respuestas inválidas cuando falte texto. |
+| Riesgo                                           | Mitigación                                                             |
+| ------------------------------------------------ | ---------------------------------------------------------------------- |
+| Diferencias entre `Content` y mensajes neutrales | Mapper dedicado y pruebas de ida y vuelta del historial.               |
+| Usage metadata ausente en algunos streams        | Usar valores seguros y marcar respuestas inválidas cuando falte texto. |
 
 ## Lo que **no** está incluido en este spec
 
 - Groq y Ollama.
 - Embeddings, Vertex AI y RAG.
 - Funcionalidades multimodales no requeridas.
+
+---
+
+Plan de implementación
+
+1. Crear carpeta y barrel de gemini.
+2. Implementar mappers de mensajes y tools.
+3. Implementar GeminiClient.ask.
+4. Implementar GeminiClient.stream.
+5. Reconstruir contenidos y function calls entre iteraciones.
+6. Normalizar tokens, respuestas vacías y errores del SDK.
+7. Añadir pruebas unitarias con respuestas simuladas.
+8. Actualizar documentación y barrels superiores.
