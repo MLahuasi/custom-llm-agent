@@ -2,14 +2,21 @@ import Groq from 'groq-sdk';
 import type {
   ChatCompletion,
   ChatCompletionMessageToolCall,
+  ChatCompletionMessageParam,
 } from 'groq-sdk/resources/chat/completions.js';
-import { AppError } from '../../../../shared/index.js';
+import { AppError, getLlmDefaults } from '../../../../shared/index.js';
 import type {
   LlmClient,
   LlmRequest,
   LlmResponse,
 } from '../../../../application/index.js';
-import { mapMessages, mapToolCalls, mapTools } from './mappers.js';
+import {
+  mapMessages,
+  mapToolCalls,
+  mapToolResult,
+  mapTools,
+} from './mappers.js';
+import { executeToolCalls } from '../tool-executor.js';
 
 const PROVIDER_ERROR_CODE = 'LLM_PROVIDER_ERROR';
 
@@ -27,16 +34,98 @@ export class GroqClient implements LlmClient {
       request.systemPrompt,
     );
     const tools = mapTools(request.tools);
+    const messages: ChatCompletionMessageParam[] = [...mappedMessages.messages];
+    const defaults = getLlmDefaults();
+    const maxIterations = normalizeLimit(
+      request.maxIterations,
+      defaults.maxIterations,
+      'maxIterations',
+    );
+    const maxToolCalls = normalizeLimit(
+      request.maxToolCalls,
+      defaults.maxToolCalls,
+      'maxToolCalls',
+    );
+    const textParts: string[] = [];
+    const toolsUsed = new Set<string>();
+    const seenToolCalls = new Set<string>();
+    let providerRequests = 0;
+    let inputTokens = 0;
+    let outputTokens = 0;
+    let toolCallCount = 0;
 
     try {
-      const response = await this.client.chat.completions.create({
-        model: this.model,
-        messages: mappedMessages.messages,
-        max_tokens: request.maxTokens ?? this.defaultMaxTokens,
-        ...(tools.length > 0 ? { tools } : {}),
-      });
+      for (let iteration = 0; iteration < maxIterations; iteration += 1) {
+        const response = await this.createCompletion(
+          messages,
+          tools,
+          request.maxTokens,
+        );
+        providerRequests += 1;
+        inputTokens += response.usage?.prompt_tokens ?? 0;
+        outputTokens += response.usage?.completion_tokens ?? 0;
 
-      return normalizeResponse(response);
+        const choice = response.choices[0];
+        if (choice === undefined) {
+          throw new AppError(
+            'The LLM provider returned an invalid response.',
+            'LLM_INVALID_RESPONSE',
+          );
+        }
+
+        const responseText = choice.message.content ?? '';
+        if (responseText.length > 0) {
+          textParts.push(responseText);
+        }
+
+        const toolCalls = choice.message.tool_calls ?? [];
+        const mappedCalls = mapToolCalls(toolCalls);
+        toolCallCount += mappedCalls.length;
+        mappedCalls.forEach((call) => toolsUsed.add(call.name));
+
+        if (mappedCalls.length === 0) {
+          return createResponse(
+            textParts,
+            providerRequests,
+            inputTokens,
+            outputTokens,
+            toolsUsed,
+            toolCallCount,
+          );
+        }
+
+        if (toolCallCount > maxToolCalls) {
+          throw new AppError(
+            'The maximum number of tool calls was exceeded.',
+            'LLM_MAX_TOOL_CALLS_EXCEEDED',
+          );
+        }
+
+        if (iteration === maxIterations - 1) {
+          throw new AppError(
+            'The maximum number of LLM iterations was exceeded.',
+            'LLM_MAX_ITERATIONS_EXCEEDED',
+          );
+        }
+
+        messages.push({
+          role: 'assistant',
+          content: choice.message.content,
+          tool_calls: toolCalls,
+        });
+        const results = await executeToolCalls(
+          mappedCalls,
+          request.tools ?? [],
+          request.toolExecutor,
+          seenToolCalls,
+        );
+        messages.push(...results.map(mapToolResult));
+      }
+
+      throw new AppError(
+        'The maximum number of LLM iterations was exceeded.',
+        'LLM_MAX_ITERATIONS_EXCEEDED',
+      );
     } catch (error) {
       if (error instanceof AppError) {
         throw error;
@@ -56,6 +145,126 @@ export class GroqClient implements LlmClient {
       request.systemPrompt,
     );
     const tools = mapTools(request.tools);
+    const messages: ChatCompletionMessageParam[] = [...mappedMessages.messages];
+    const textParts: string[] = [];
+    const toolsUsed = new Set<string>();
+    const seenToolCalls = new Set<string>();
+    const defaults = getLlmDefaults();
+    const maxIterations = normalizeLimit(
+      request.maxIterations,
+      defaults.maxIterations,
+      'maxIterations',
+    );
+    const maxToolCalls = normalizeLimit(
+      request.maxToolCalls,
+      defaults.maxToolCalls,
+      'maxToolCalls',
+    );
+    let providerRequests = 0;
+    let toolCallCount = 0;
+    let inputTokens = 0;
+    let outputTokens = 0;
+
+    try {
+      for (let iteration = 0; iteration < maxIterations; iteration += 1) {
+        const streamed = await this.consumeStream(
+          messages,
+          tools,
+          request.maxTokens,
+          request.onChunk,
+        );
+        providerRequests += 1;
+        inputTokens += streamed.inputTokens;
+        outputTokens += streamed.outputTokens;
+        if (streamed.text.length > 0) {
+          textParts.push(streamed.text);
+        }
+
+        const mappedCalls = mapToolCalls(streamed.toolCalls);
+        toolCallCount += mappedCalls.length;
+        mappedCalls.forEach((call) => toolsUsed.add(call.name));
+
+        if (mappedCalls.length === 0) {
+          return createResponse(
+            textParts,
+            providerRequests,
+            inputTokens,
+            outputTokens,
+            toolsUsed,
+            toolCallCount,
+          );
+        }
+
+        if (toolCallCount > maxToolCalls) {
+          throw new AppError(
+            'The maximum number of tool calls was exceeded.',
+            'LLM_MAX_TOOL_CALLS_EXCEEDED',
+          );
+        }
+
+        if (iteration === maxIterations - 1) {
+          throw new AppError(
+            'The maximum number of LLM iterations was exceeded.',
+            'LLM_MAX_ITERATIONS_EXCEEDED',
+          );
+        }
+
+        messages.push({
+          role: 'assistant',
+          content: streamed.text.length > 0 ? streamed.text : null,
+          tool_calls: streamed.toolCalls,
+        });
+        const results = await executeToolCalls(
+          mappedCalls,
+          request.tools ?? [],
+          request.toolExecutor,
+          seenToolCalls,
+        );
+        messages.push(...results.map(mapToolResult));
+      }
+
+      throw new AppError(
+        'The maximum number of LLM iterations was exceeded.',
+        'LLM_MAX_ITERATIONS_EXCEEDED',
+      );
+    } catch (error) {
+      if (error instanceof AppError) {
+        throw error;
+      }
+
+      throw new AppError(
+        'The LLM provider stream failed.',
+        'LLM_STREAM_PROVIDER_ERROR',
+      );
+    }
+  }
+
+  private async createCompletion(
+    messages: ChatCompletionMessageParam[],
+    tools: ReturnType<typeof mapTools>,
+    maxTokens: number | undefined,
+  ): Promise<ChatCompletion> {
+    try {
+      return await this.client.chat.completions.create({
+        model: this.model,
+        messages,
+        max_tokens: maxTokens ?? this.defaultMaxTokens,
+        ...(tools.length > 0 ? { tools } : {}),
+      });
+    } catch {
+      throw new AppError(
+        'The LLM provider request failed.',
+        PROVIDER_ERROR_CODE,
+      );
+    }
+  }
+
+  private async consumeStream(
+    messages: ChatCompletionMessageParam[],
+    tools: ReturnType<typeof mapTools>,
+    maxTokens: number | undefined,
+    onChunk: LlmRequest['onChunk'],
+  ): Promise<StreamResult> {
     const callbackPromises: Promise<unknown>[] = [];
     const textParts: string[] = [];
     const toolCalls = new Map<number, ToolCallAccumulator>();
@@ -65,8 +274,8 @@ export class GroqClient implements LlmClient {
     try {
       const stream = await this.client.chat.completions.create({
         model: this.model,
-        messages: mappedMessages.messages,
-        max_tokens: request.maxTokens ?? this.defaultMaxTokens,
+        messages,
+        max_tokens: maxTokens ?? this.defaultMaxTokens,
         stream: true,
         ...(tools.length > 0 ? { tools } : {}),
       });
@@ -80,8 +289,8 @@ export class GroqClient implements LlmClient {
         const text = choice.delta.content ?? '';
         if (text.length > 0) {
           textParts.push(text);
-          if (request.onChunk !== undefined) {
-            callbackPromises.push(Promise.resolve(request.onChunk(text)));
+          if (onChunk !== undefined) {
+            callbackPromises.push(Promise.resolve(onChunk(text)));
           }
         }
 
@@ -105,20 +314,13 @@ export class GroqClient implements LlmClient {
 
       await Promise.all(callbackPromises);
 
-      const mappedCalls = mapToolCalls([...toolCalls.entries()]
-        .sort(([left], [right]) => left - right)
-        .map(([, call]) => completeToolCall(call)));
-      const text = normalizeText(textParts.join(''));
-
-      if (text.length === 0 && mappedCalls.length === 0) {
-        throw new AppError('The LLM returned an empty response.', 'LLM_EMPTY_RESPONSE');
-      }
-
       return {
-        text,
-        usage: { providerRequests: 1, inputTokens, outputTokens },
-        toolsUsed: mappedCalls.map((call) => call.name),
-        toolCallCount: mappedCalls.length,
+        text: textParts.join(''),
+        toolCalls: [...toolCalls.entries()]
+          .sort(([left], [right]) => left - right)
+          .map(([, call]) => completeToolCall(call)),
+        inputTokens,
+        outputTokens,
       };
     } catch (error) {
       if (error instanceof AppError) {
@@ -133,32 +335,24 @@ export class GroqClient implements LlmClient {
   }
 }
 
-function normalizeResponse(response: ChatCompletion): LlmResponse {
-  const choice = response.choices[0];
-  if (choice === undefined) {
-    throw new AppError(
-      'The LLM provider returned an invalid response.',
-      'LLM_INVALID_RESPONSE',
-    );
-  }
-
-  const toolCalls = choice.message.tool_calls ?? [];
-  const mappedCalls = mapToolCalls(toolCalls);
-  const text = normalizeText(choice.message.content ?? '');
-
-  if (text.length === 0 && mappedCalls.length === 0) {
+function createResponse(
+  textParts: readonly string[],
+  providerRequests: number,
+  inputTokens: number,
+  outputTokens: number,
+  toolsUsed: ReadonlySet<string>,
+  toolCallCount: number,
+): LlmResponse {
+  const text = normalizeText(textParts.join(' '));
+  if (text.length === 0 && toolCallCount === 0) {
     throw new AppError('The LLM returned an empty response.', 'LLM_EMPTY_RESPONSE');
   }
 
   return {
     text,
-    usage: {
-      providerRequests: 1,
-      inputTokens: response.usage?.prompt_tokens ?? 0,
-      outputTokens: response.usage?.completion_tokens ?? 0,
-    },
-    toolsUsed: mappedCalls.map((call) => call.name),
-    toolCallCount: mappedCalls.length,
+    usage: { providerRequests, inputTokens, outputTokens },
+    toolsUsed: [...toolsUsed],
+    toolCallCount,
   };
 }
 
@@ -193,6 +387,22 @@ interface ToolCallAccumulator {
   id?: string;
   name?: string;
   arguments: string;
+}
+
+interface StreamResult {
+  text: string;
+  toolCalls: ChatCompletionMessageToolCall[];
+  inputTokens: number;
+  outputTokens: number;
+}
+
+function normalizeLimit(value: number | undefined, fallback: number, name: string): number {
+  const limit = value ?? fallback;
+  if (!Number.isInteger(limit) || limit < 1) {
+    throw new AppError(`The ${name} limit is invalid.`, 'LLM_INVALID_LIMIT');
+  }
+
+  return limit;
 }
 
 function readUsage(
