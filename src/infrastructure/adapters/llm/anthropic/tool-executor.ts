@@ -26,9 +26,9 @@ export async function executeToolCalls(
   calls: readonly LlmToolCall[],
   definitions: readonly LlmToolDefinition[],
   executor?: LlmToolExecutor,
+  seenCalls: Set<string> = new Set<string>(),
 ): Promise<ToolExecutionResult[]> {
   const availableTools = new Set(definitions.map((definition) => definition.name));
-  const seenCalls = new Set<string>();
 
   return Promise.all(
     calls.map(async (call): Promise<ToolExecutionResult> => {

@@ -104,6 +104,12 @@ describe('AnthropicClient', () => {
       toolsUsed: ['weather'],
       toolCallCount: 1,
     });
+    expect(sdk.messages.create.mock.calls[0][0].tools).toEqual([
+      {
+        name: 'weather',
+        input_schema: { type: 'object' },
+      },
+    ]);
     expect(sdk.messages.create.mock.calls[1][0].messages).toEqual([
       { role: 'user', content: 'Weather?' },
       {
@@ -192,6 +198,49 @@ describe('AnthropicClient', () => {
         maxToolCalls: 0,
       }),
     ).rejects.toMatchObject({ code: 'LLM_INVALID_LIMIT' });
+
+    const tooManyCallsSdk = createSdkMock();
+    tooManyCallsSdk.messages.create.mockResolvedValue(response([
+      { type: 'tool_use', id: 'call_1', name: 'tool', input: {} },
+      { type: 'tool_use', id: 'call_2', name: 'tool', input: {} },
+    ]));
+    await expect(new AnthropicClient(tooManyCallsSdk, 'claude-test').ask({
+      prompt: 'Too many calls',
+      tools: [{ name: 'tool', inputSchema: { type: 'object' } }],
+      maxToolCalls: 1,
+    })).rejects.toMatchObject({ code: 'LLM_MAX_TOOL_CALLS_EXCEEDED' });
+  });
+
+  it('returns a safe result when a tool call is repeated in another iteration', async () => {
+    const sdk = createSdkMock();
+    sdk.messages.create
+      .mockResolvedValueOnce(
+        response([{ type: 'tool_use', id: 'call_1', name: 'weather', input: { city: 'Madrid' } }]),
+      )
+      .mockResolvedValueOnce(
+        response([{ type: 'tool_use', id: 'call_2', name: 'weather', input: { city: 'Madrid' } }]),
+      )
+      .mockResolvedValueOnce(response([{ type: 'text', text: 'Done.' }]));
+    const execute = vi.fn().mockResolvedValue('sunny');
+    const client = new AnthropicClient(sdk, 'claude-test');
+
+    await expect(client.ask({
+      prompt: 'Weather?',
+      tools: [{ name: 'weather', inputSchema: { type: 'object' } }],
+      toolExecutor: { execute },
+      maxIterations: 3,
+    })).resolves.toMatchObject({ text: 'Done.', toolCallCount: 2 });
+
+    expect(execute).toHaveBeenCalledTimes(1);
+    expect(sdk.messages.create.mock.calls[2][0].messages.at(-1)).toEqual({
+      role: 'user',
+      content: [{
+        type: 'tool_result',
+        tool_use_id: 'call_2',
+        content: 'This tool call was already processed.',
+        is_error: true,
+      }],
+    });
   });
 });
 
@@ -226,5 +275,22 @@ describe('executeToolCalls', () => {
     ]);
     expect(results[2].isError).toBe(true);
     expect(results[3].isError).toBe(true);
+  });
+
+  it('returns safe results for malformed arguments and executor failures', async () => {
+    const results = await executeToolCalls(
+      [
+        { id: '1', name: 'weather', arguments: null as unknown as Record<string, unknown> },
+        { id: '2', name: 'weather', arguments: {} },
+      ],
+      [{ name: 'weather', inputSchema: { type: 'object' } }],
+      { execute: vi.fn().mockRejectedValue(new Error('sensitive executor error')) },
+    );
+
+    expect(results.map((result) => result.content)).toEqual([
+      'The tool arguments are invalid.',
+      'The tool could not be executed.',
+    ]);
+    expect(results.every((result) => result.isError)).toBe(true);
   });
 });

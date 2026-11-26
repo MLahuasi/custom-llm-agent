@@ -1,6 +1,6 @@
 # SPEC 02 — Contrato común LLM y cliente Anthropic
 
-> **Estado:** Aprobado
+> **Estado:** Implementado
 > **Depende de:** SPEC 01
 > **Fecha:** 2026-11-26
 > **Objetivo:** Definir el puerto común para clientes LLM e implementar el adaptador Anthropic con chat, streaming, historial, tools iterativas, métricas normalizadas y errores seguros.
@@ -70,20 +70,20 @@ El historial existente se conservará y `prompt` se añadirá siempre como últi
 
 ## Criterios de aceptación
 
-- [ ] `npm run typecheck` finaliza sin errores.
-- [ ] `LlmClient` no importa SDKs ni tipos de infraestructura.
-- [ ] `AnthropicClient` implementa `LlmClient` mediante inyección por constructor.
-- [ ] `ask` conserva el historial y añade `prompt` al final.
-- [ ] `ask` devuelve texto y uso normalizado sin exponer tipos Anthropic.
-- [ ] `stream` entrega todos los deltas de texto mediante `onChunk` y devuelve la respuesta final.
-- [ ] Las tools se mapean desde JSON Schema neutral a Anthropic.
-- [ ] Varias tools permitidas se ejecutan en paralelo y sus resultados conservan el orden de las llamadas.
-- [ ] Las tools desconocidas, duplicadas, inválidas o fallidas producen resultados seguros para el modelo.
-- [ ] Se aplican `maxIterations` y `maxToolCalls`.
-- [ ] Se acumulan tokens y requests de todas las llamadas reales del bucle.
-- [ ] Los errores del proveedor se convierten en `AppError` sin credenciales ni payloads sensibles.
-- [ ] Las pruebas no realizan llamadas de red.
-- [ ] `npm test` finaliza correctamente.
+- [x] `npm run typecheck` finaliza sin errores.
+- [x] `LlmClient` no importa SDKs ni tipos de infraestructura.
+- [x] `AnthropicClient` implementa `LlmClient` mediante inyección por constructor.
+- [x] `ask` conserva el historial y añade `prompt` al final.
+- [x] `ask` devuelve texto y uso normalizado sin exponer tipos Anthropic.
+- [x] `stream` entrega todos los deltas de texto mediante `onChunk` y devuelve la respuesta final.
+- [x] Las tools se mapean desde JSON Schema neutral a Anthropic.
+- [x] Varias tools permitidas se ejecutan en paralelo y sus resultados conservan el orden de las llamadas.
+- [x] Las tools desconocidas, duplicadas, inválidas o fallidas producen resultados seguros para el modelo.
+- [x] Se aplican `maxIterations` y `maxToolCalls`.
+- [x] Se acumulan tokens y requests de todas las llamadas reales del bucle.
+- [x] Los errores del proveedor se convierten en `AppError` sin credenciales ni payloads sensibles.
+- [x] Las pruebas no realizan llamadas de red.
+- [x] `npm test` finaliza correctamente.
 
 ## Decisiones tomadas y descartadas
 
@@ -114,16 +114,3 @@ El historial existente se conservará y `prompt` se añadirá siempre como últi
 - Persistencia, RAG, cancelación y costes globales.
 
 ---
-
-Plan de implementación
-
-1.  Crear tipos y barrels del contrato LLM.
-2.  Documentar el contrato en src/application/ports/README.md.
-3.  Crear la estructura del adaptador Anthropic.
-4.  Implementar mappers de mensajes y tools.
-5.  Implementar el ejecutor paralelo de tools.
-6.  Implementar AnthropicClient.ask.
-7.  Implementar AnthropicClient.stream.
-8.  Normalizar uso, errores, respuestas vacías y límites.
-9.  Añadir pruebas unitarias con SDK simulado.
-10. Actualizar documentación raíz y local.

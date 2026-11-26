@@ -48,6 +48,7 @@ export class AnthropicClient implements LlmClient {
     let toolCallCount = 0;
     const textParts: string[] = [];
     const toolsUsed = new Set<string>();
+    const seenToolCalls = new Set<string>();
 
     for (let iteration = 0; iteration < maxIterations; iteration += 1) {
       const message = await this.createMessage(
@@ -106,6 +107,7 @@ export class AnthropicClient implements LlmClient {
         })),
         request.tools ?? [],
         request.toolExecutor,
+        seenToolCalls,
       );
       messages.push({
         role: 'user',
