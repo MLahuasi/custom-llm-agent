@@ -25,6 +25,13 @@ export class OllamaClient implements LlmClient {
     private readonly defaultOptions: Partial<Options> = {},
     fetchImplementation: Fetch = fetch,
   ) {
+    if (host.trim().length === 0) {
+      throw new AppError('The Ollama host is required.', 'LLM_INVALID_CONFIGURATION');
+    }
+    if (model.trim().length === 0) {
+      throw new AppError('The Ollama model is required.', 'LLM_INVALID_CONFIGURATION');
+    }
+    validateOptions(defaultOptions);
     this.client = new Ollama({ host, fetch: fetchImplementation });
   }
 
@@ -35,6 +42,7 @@ export class OllamaClient implements LlmClient {
       request.systemPrompt,
     );
     const tools = mapTools(request.tools);
+    const maxTokens = normalizeOptionalLimit(request.maxTokens, 'maxTokens');
     const defaults = getLlmDefaults();
     const maxIterations = normalizeLimit(request.maxIterations, defaults.maxIterations, 'maxIterations');
     const maxToolCalls = normalizeLimit(request.maxToolCalls, defaults.maxToolCalls, 'maxToolCalls');
@@ -54,7 +62,7 @@ export class OllamaClient implements LlmClient {
           messages,
           stream: false,
           ...(tools.length > 0 ? { tools } : {}),
-          options: this.buildOptions(request.maxTokens),
+          options: this.buildOptions(maxTokens),
         });
 
         validateResponse(response);
@@ -129,6 +137,7 @@ export class OllamaClient implements LlmClient {
       request.systemPrompt,
     );
     const tools = mapTools(request.tools);
+    const maxTokens = normalizeOptionalLimit(request.maxTokens, 'maxTokens');
     const defaults = getLlmDefaults();
     const maxIterations = normalizeLimit(request.maxIterations, defaults.maxIterations, 'maxIterations');
     const maxToolCalls = normalizeLimit(request.maxToolCalls, defaults.maxToolCalls, 'maxToolCalls');
@@ -146,7 +155,7 @@ export class OllamaClient implements LlmClient {
         const streamed = await this.consumeStream(
           messages,
           tools,
-          request.maxTokens,
+          maxTokens,
           request.onChunk,
         );
         providerRequests += 1;
@@ -310,20 +319,47 @@ function validateResponse(response: ChatResponse): void {
     || typeof response !== 'object'
     || response.message === null
     || typeof response.message !== 'object'
+    || typeof response.message.content !== 'string'
   ) {
     throw new AppError(
       'The LLM provider returned an invalid response.',
       'LLM_INVALID_RESPONSE',
     );
   }
+
+  if (response.message.tool_calls !== undefined) {
+    if (!Array.isArray(response.message.tool_calls)) {
+      throw new AppError(
+        'The LLM provider returned invalid tool calls.',
+        'LLM_INVALID_RESPONSE',
+      );
+    }
+
+    for (const toolCall of response.message.tool_calls) {
+      if (
+        toolCall === null
+        || typeof toolCall !== 'object'
+        || toolCall.function === undefined
+        || typeof toolCall.function.name !== 'string'
+        || typeof toolCall.function.arguments !== 'object'
+        || toolCall.function.arguments === null
+        || Array.isArray(toolCall.function.arguments)
+      ) {
+        throw new AppError(
+          'The LLM provider returned an invalid tool call.',
+          'LLM_INVALID_RESPONSE',
+        );
+      }
+    }
+  }
 }
 
-function normalizeTokenCount(value: number | undefined, name: string): number {
+function normalizeTokenCount(value: unknown, name: string): number {
   if (value === undefined) {
     return 0;
   }
 
-  if (Number.isInteger(value) && value >= 0) {
+  if (typeof value === 'number' && Number.isInteger(value) && value >= 0) {
     return value;
   }
 
@@ -340,6 +376,28 @@ function normalizeLimit(value: number | undefined, fallback: number, name: strin
   }
 
   return limit;
+}
+
+function normalizeOptionalLimit(value: number | undefined, name: string): number | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (!Number.isInteger(value) || value < 1) {
+    throw new AppError(`The ${name} limit is invalid.`, 'LLM_INVALID_LIMIT');
+  }
+
+  return value;
+}
+
+function validateOptions(options: Partial<Options>): void {
+  if (options.num_predict !== undefined
+    && (!Number.isInteger(options.num_predict) || options.num_predict < 1)) {
+    throw new AppError(
+      'The Ollama num_predict option is invalid.',
+      'LLM_INVALID_CONFIGURATION',
+    );
+  }
 }
 
 function normalizeText(text: string): string {
