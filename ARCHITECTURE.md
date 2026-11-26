@@ -161,3 +161,7 @@ An agent must stop and ask when a relevant decision is unresolved. It must not s
 - Gemini chat uses `generateContent` and `generateContentStream`; manual function calling preserves the shared iteration and tool-call limits instead of using automatic function calling.
 - Gemini `Content`, function declarations, function calls, and function responses remain isolated in the Gemini infrastructure module and are mapped to the neutral LLM contract.
 - Gemini SDK request shapes and streaming behavior were checked against the current `@google/genai` documentation through Context7; tests use simulated SDK responses and never access the network.
+- `GroqClient` receives an already configured `Groq` SDK instance, chat model, and default output-token limit through constructor injection. Groq credentials are resolved during composition, not inside the adapter.
+- Groq chat uses Chat Completions from `groq-sdk`; fragmented streaming tool calls are accumulated by index before JSON arguments are parsed.
+- Groq assistant tool-call messages and tool result messages remain inside the Groq infrastructure module while mapping to the neutral LLM contract; the shared tool executor handles parallel execution and duplicate detection.
+- Groq SDK request shapes, Chat Completions tools, and streaming deltas were checked against current `groq-sdk` documentation through Context7; tests use simulated SDK responses and never access the network.

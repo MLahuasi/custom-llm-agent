@@ -1,6 +1,6 @@
 # SPEC 05 — Cliente Groq
 
-> **Estado:** Draft
+> **Estado:** Implementado
 > **Depende de:** SPEC 04
 > **Fecha:** 2026-11-26
 > **Objetivo:** Implementar el adaptador Groq compatible con el puerto común LLM para chat, streaming, historial, tools iterativas, métricas y errores normalizados.
@@ -36,16 +36,16 @@
 
 ## Criterios de aceptación
 
-- [ ] `GroqClient` implementa `LlmClient`.
-- [ ] Las conversaciones simples y con historial producen `LlmResponse`.
-- [ ] `onChunk` recibe deltas de texto durante streaming.
-- [ ] Las llamadas de tools fragmentadas se reconstruyen correctamente.
-- [ ] Los resultados se vinculan con el ID de cada llamada.
-- [ ] Se aplican límites de tools, iteraciones y duplicados.
-- [ ] Las métricas disponibles se acumulan correctamente.
-- [ ] Los errores del SDK no filtran secretos ni tipos Groq.
-- [ ] Las pruebas no realizan llamadas de red.
-- [ ] `npm run typecheck`, `npm test` y `npm run build` finalizan correctamente.
+- [x] `GroqClient` implementa `LlmClient`.
+- [x] Las conversaciones simples y con historial producen `LlmResponse`.
+- [x] `onChunk` recibe deltas de texto durante streaming.
+- [x] Las llamadas de tools fragmentadas se reconstruyen correctamente.
+- [x] Los resultados se vinculan con el ID de cada llamada.
+- [x] Se aplican límites de tools, iteraciones y duplicados.
+- [x] Las métricas disponibles se acumulan correctamente.
+- [x] Los errores del SDK no filtran secretos ni tipos Groq.
+- [x] Las pruebas no realizan llamadas de red.
+- [x] `npm run typecheck`, `npm test` y `npm run build` finalizan correctamente.
 
 ## Decisiones tomadas y descartadas
 
@@ -57,10 +57,10 @@
 
 ## Riesgos
 
-| Riesgo | Mitigación |
-| --- | --- |
-| Argumentos JSON llegan en varios fragmentos | Acumular por índice y parsear solo al finalizar la iteración. |
-| Usage no llega en todos los chunks | Usar el usage final disponible y validar la respuesta textual. |
+| Riesgo                                      | Mitigación                                                     |
+| ------------------------------------------- | -------------------------------------------------------------- |
+| Argumentos JSON llegan en varios fragmentos | Acumular por índice y parsear solo al finalizar la iteración.  |
+| Usage no llega en todos los chunks          | Usar el usage final disponible y validar la respuesta textual. |
 
 ## Lo que **no** está incluido en este spec
 
