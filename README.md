@@ -68,6 +68,38 @@ El proyecto usa arquitectura hexagonal y Domain-Driven Design:
 
 Consulta [ARCHITECTURE.md](ARCHITECTURE.md) para las reglas técnicas completas.
 
+### Diagrama informativo
+
+```text
+                         ┌──────────────────────┐
+                         │  Presentation / CLI  │
+                         └──────────┬───────────┘
+                                    │ input ports
+                                    ▼
+                         ┌──────────────────────┐
+                         │ Application Use Cases│
+                         └───────┬────────┬─────┘
+                                 │        │ output ports
+                                 │        ▼
+                                 │  ┌──────────────────────┐
+                                 │  │ Infrastructure        │
+                                 │  │ LLM / Persistence     │
+                                 │  └──────────┬───────────┘
+                                 │             │
+                                 ▼             │
+                         ┌──────────────────────┐
+                         │       Domain         │
+                         └──────────────────────┘
+
+        ┌────────────────────────────────────────────────────┐
+        │ Shared: environment, errors and cross-cutting code │
+        └────────────────────────────────────────────────────┘
+```
+
+Cada carpeta de `src/` tiene un barrel `index.ts`. Los consumidores externos de una capa importan desde el barrel raíz de esa capa, por ejemplo `./shared/index.js`. Los barrels usan exports nombrados explícitos.
+
+Los archivos internos de un mismo módulo pueden importarse directamente para evitar ciclos; los imports entre módulos o capas deben pasar por el barrel correspondiente.
+
 ## Decisiones técnicas
 
 Antes de cerrar una decisión técnica relevante se debe consultar Context7 para investigar documentación actual y mejores prácticas. La respuesta de Context7 es evidencia, no una decisión automática. Las alternativas, riesgos, recomendación y acuerdo explícito deben registrarse en `ARCHITECTURE.md`.

@@ -12,6 +12,7 @@ The project currently provides the bootstrap, the hexagonal/DDD directory struct
 - Use npm and preserve `package-lock.json`.
 - The package is private and uses ESM.
 - Use relative NodeNext imports with `.js` extensions in TypeScript source files.
+- Every directory under `src/` must have an `index.ts` barrel.
 
 ## Verified commands
 
@@ -36,6 +37,11 @@ npm run test:watch
 - `src/presentation/cli` handles console input and output only.
 - `src/shared` contains reusable technical utilities and must not contain business rules.
 - Every future example of an agent, RAG flow, Function Calling flow, or Tools flow must be represented as an application use case.
+- Use explicit named exports in barrels; never use `export *`.
+- Imports crossing a layer must use the destination layer's root barrel, such as `./shared/index.js`.
+- Imports crossing modules in the same layer must use the destination module's barrel.
+- Files within the same module may import directly to avoid cycles through their own barrel.
+- Do not introduce import aliases or `package.json#imports` for this convention.
 
 Read `ARCHITECTURE.md` before changing boundaries, dependencies, providers, persistence, or technical conventions.
 
@@ -61,6 +67,16 @@ For every relevant decision involving architecture, libraries, SDKs, APIs, CLI b
 7. If Context7 is unavailable, record that limitation, consult official documentation, and still obtain explicit agreement.
 
 Agents must not impose a significant technical decision unilaterally. If the spec does not resolve an ambiguity, stop and ask for a decision instead of improvising.
+
+## Barrel maintenance
+
+When adding a module or layer:
+
+1. Create or update its `index.ts` barrel.
+2. Export only the intended public symbols with explicit named exports.
+3. Update the parent layer barrel when the module is part of that layer's public surface.
+4. Use `.js` in all ESM import specifiers.
+5. Check for circular imports before routing a file through a barrel.
 
 ## Scope discipline
 

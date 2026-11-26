@@ -12,6 +12,19 @@ This repository is a private Node.js ESM console application for learning how to
 - TypeScript uses `target: ES2022`, `module: NodeNext`, `moduleResolution: NodeNext`, and strict checking.
 - Internal imports use relative paths with `.js` extensions.
 
+## Barrel modules
+
+Every directory under `src/` has an `index.ts` barrel. Barrels define the public surface of a layer or module.
+
+- Use named exports explicitly; do not use `export *`.
+- Consumers crossing a layer must import from the layer root barrel, such as `./shared/index.js`.
+- Consumers crossing modules in the same layer must import from the destination module barrel.
+- Files inside the same module may import one another directly to avoid cycles through their own barrel.
+- Every ESM import must use an explicit `.js` extension, including imports that target a compiled barrel.
+- Do not introduce aliases or `package.json#imports` for this convention.
+
+The current public shared surface is exported by `src/shared/index.ts`, which delegates explicit exports to `src/shared/utils/index.ts`.
+
 ## Layers
 
 ### Domain
@@ -43,6 +56,34 @@ The CLI translates user input into input-port calls and formats results. It must
 Path: `src/shared`
 
 Shared utilities contain cross-cutting technical concerns such as environment loading and error handling. They must not contain business rules or depend on a specific use case.
+
+## Informative dependency diagram
+
+```text
+                         ┌──────────────────────┐
+                         │  Presentation / CLI  │
+                         └──────────┬───────────┘
+                                    │ input ports
+                                    ▼
+                         ┌──────────────────────┐
+                         │ Application Use Cases│
+                         └───────┬────────┬─────┘
+                                 │        │ output ports
+                                 │        ▼
+                                 │  ┌──────────────────────┐
+                                 │  │ Infrastructure        │
+                                 │  │ LLM / Persistence     │
+                                 │  └──────────┬───────────┘
+                                 │             │
+                                 ▼             │
+                         ┌──────────────────────┐
+                         │       Domain         │
+                         └──────────────────────┘
+
+        ┌────────────────────────────────────────────────────┐
+        │ Shared: environment, errors and cross-cutting code │
+        └────────────────────────────────────────────────────┘
+```
 
 ## Dependency direction
 
@@ -104,3 +145,4 @@ An agent must stop and ask when a relevant decision is unresolved. It must not s
 - Node.js `>=22.12.0` is the package engine range, with Node.js 24 LTS recommended for development.
 - Provider credentials are validated at use-case execution time rather than during global startup.
 - Context7 research and explicit agreement are required before closing relevant technical decisions.
+- Barrels with explicit named exports are required at every `src/` directory boundary.

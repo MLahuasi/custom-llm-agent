@@ -1,4 +1,4 @@
-import { loadEnvironment } from "./shared/utils/environment.js";
+import { loadEnvironment } from "./shared/index.js";
 
 loadEnvironment();
 

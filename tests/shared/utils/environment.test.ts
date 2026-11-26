@@ -2,12 +2,11 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { AppError } from "../../../src/shared/utils/app-error.js";
+import { AppError, requiredEnv } from "../../../src/shared/index.js";
 import {
   loadEnvironment,
   optionalEnv,
-  requiredEnv,
-} from "../../../src/shared/utils/environment.js";
+} from "../../../src/shared/index.js";
 
 const environmentVariablesToClean: string[] = [];
 
