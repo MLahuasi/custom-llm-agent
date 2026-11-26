@@ -1,2 +1,10 @@
-// Public exports for the Groq adapter are added as its modules are implemented.
-export {};
+export {
+  mapMessage,
+  mapMessages,
+  mapTool,
+  mapToolCall,
+  mapToolCalls,
+  mapToolResult,
+  mapTools,
+} from './mappers.js';
+export type { GroqMappedMessages } from './mappers.js';
