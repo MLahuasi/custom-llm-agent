@@ -1,4 +1,5 @@
 export type {
+  EmbeddingClient,
   LlmClient,
   LlmMessage,
   LlmMessageRole,
