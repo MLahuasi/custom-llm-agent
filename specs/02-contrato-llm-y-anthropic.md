@@ -1,6 +1,6 @@
 # SPEC 02 — Contrato común LLM y cliente Anthropic
 
-> **Estado:** Draft
+> **Estado:** Aprobado
 > **Depende de:** SPEC 01
 > **Fecha:** 2026-11-26
 > **Objetivo:** Definir el puerto común para clientes LLM e implementar el adaptador Anthropic con chat, streaming, historial, tools iterativas, métricas normalizadas y errores seguros.
@@ -99,12 +99,12 @@ El historial existente se conservará y `prompt` se añadirá siempre como últi
 
 ## Riesgos
 
-| Riesgo | Mitigación |
-| --- | --- |
-| Diferencias entre roles neutrales y bloques Anthropic | Mantener mappers aislados y probar historial con tools. |
-| Respuestas parciales o sin texto | Convertirlas en `AppError` estable. |
-| Repetición de llamadas a tools | Registrar una firma determinista por nombre y argumentos. |
-| Retries internos del SDK | Usar defaults del SDK y contar requests lógicas del adaptador. |
+| Riesgo                                                | Mitigación                                                     |
+| ----------------------------------------------------- | -------------------------------------------------------------- |
+| Diferencias entre roles neutrales y bloques Anthropic | Mantener mappers aislados y probar historial con tools.        |
+| Respuestas parciales o sin texto                      | Convertirlas en `AppError` estable.                            |
+| Repetición de llamadas a tools                        | Registrar una firma determinista por nombre y argumentos.      |
+| Retries internos del SDK                              | Usar defaults del SDK y contar requests lógicas del adaptador. |
 
 ## Lo que **no** está incluido en este spec
 
@@ -112,3 +112,18 @@ El historial existente se conservará y `prompt` se añadirá siempre como últi
 - Embeddings.
 - Casos de uso y CLI.
 - Persistencia, RAG, cancelación y costes globales.
+
+---
+
+Plan de implementación
+
+1.  Crear tipos y barrels del contrato LLM.
+2.  Documentar el contrato en src/application/ports/README.md.
+3.  Crear la estructura del adaptador Anthropic.
+4.  Implementar mappers de mensajes y tools.
+5.  Implementar el ejecutor paralelo de tools.
+6.  Implementar AnthropicClient.ask.
+7.  Implementar AnthropicClient.stream.
+8.  Normalizar uso, errores, respuestas vacías y límites.
+9.  Añadir pruebas unitarias con SDK simulado.
+10. Actualizar documentación raíz y local.
