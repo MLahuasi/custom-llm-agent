@@ -8,6 +8,7 @@ import type {
 import { AppError } from '../../../../shared/index.js';
 import { getLlmDefaults } from '../../../../shared/index.js';
 import type {
+  EmbeddingClient,
   LlmClient,
   LlmRequest,
   LlmResponse,
@@ -22,12 +23,59 @@ import {
 
 const PROVIDER_ERROR_CODE = 'LLM_PROVIDER_ERROR';
 
-export class OpenAiClient implements LlmClient {
+export class OpenAiClient implements LlmClient, EmbeddingClient {
   public constructor(
     private readonly client: OpenAI,
     private readonly model: string,
+    private readonly embeddingModel: string,
     private readonly defaultMaxTokens = 1024,
   ) {}
+
+  public async generateEmbedding(text: string): Promise<number[]> {
+    const embeddings = await this.generateEmbeddings([text]);
+    return embeddings[0];
+  }
+
+  public async generateEmbeddings(
+    texts: readonly string[],
+  ): Promise<number[][]> {
+    validateEmbeddingInputs(texts);
+
+    try {
+      const response = await this.client.embeddings.create({
+        model: this.embeddingModel,
+        input: [...texts],
+      });
+      const data = [...response.data].sort((left, right) => left.index - right.index);
+
+      if (data.length !== texts.length || data.some((item, index) => item.index !== index)) {
+        throw new AppError(
+          'The embedding provider returned an invalid response.',
+          'EMBEDDING_INVALID_RESPONSE',
+        );
+      }
+
+      return data.map((item) => {
+        if (!isNumberVector(item.embedding)) {
+          throw new AppError(
+            'The embedding provider returned an invalid vector.',
+            'EMBEDDING_INVALID_RESPONSE',
+          );
+        }
+
+        return item.embedding;
+      });
+    } catch (error) {
+      if (error instanceof AppError) {
+        throw error;
+      }
+
+      throw new AppError(
+        'The embedding provider request failed.',
+        'EMBEDDING_PROVIDER_ERROR',
+      );
+    }
+  }
 
   public async ask(request: LlmRequest): Promise<LlmResponse> {
     const mappedMessages = mapMessages(
@@ -345,6 +393,26 @@ function normalizeLimit(value: number | undefined, fallback: number, name: strin
 
 function normalizeText(text: string): string {
   return text.replace(/\s+/g, ' ').trim();
+}
+
+function validateEmbeddingInputs(texts: readonly string[]): void {
+  if (texts.length === 0) {
+    throw new AppError(
+      'At least one text is required for embeddings.',
+      'EMBEDDING_INVALID_INPUT',
+    );
+  }
+
+  if (texts.some((text) => text.trim().length === 0)) {
+    throw new AppError(
+      'Embedding texts must not be empty.',
+      'EMBEDDING_INVALID_INPUT',
+    );
+  }
+}
+
+function isNumberVector(value: unknown): value is number[] {
+  return Array.isArray(value) && value.every((entry) => typeof entry === 'number');
 }
 
 function isFunctionToolCall(
