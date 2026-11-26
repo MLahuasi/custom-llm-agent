@@ -57,11 +57,71 @@ export class GeminiClient implements LlmClient {
     };
   }
 
-  public async stream(_request: LlmRequest): Promise<LlmResponse> {
-    throw new AppError(
-      'Gemini streaming is implemented in a later step.',
-      'LLM_STREAM_NOT_IMPLEMENTED',
+  public async stream(request: LlmRequest): Promise<LlmResponse> {
+    const mappedMessages = mapMessages(
+      request.history,
+      request.prompt,
+      request.systemPrompt,
     );
+    const tools = mapTools(request.tools);
+    const defaults = getLlmDefaults();
+    normalizeLimit(request.maxIterations, defaults.maxIterations, 'maxIterations');
+    normalizeLimit(request.maxToolCalls, defaults.maxToolCalls, 'maxToolCalls');
+
+    try {
+      const stream = await this.generateContentStream(
+        mappedMessages.contents,
+        mappedMessages.systemInstruction,
+        tools,
+        request.maxTokens,
+      );
+      const callbackPromises: Promise<unknown>[] = [];
+      const textParts: string[] = [];
+      const functionCalls = [] as NonNullable<GenerateContentResponse['functionCalls']>;
+      let inputTokens = 0;
+      let outputTokens = 0;
+
+      for await (const chunk of stream) {
+        const text = chunk.text ?? '';
+        if (text.length > 0) {
+          textParts.push(text);
+          if (request.onChunk !== undefined) {
+            callbackPromises.push(Promise.resolve(request.onChunk(text)));
+          }
+        }
+
+        if (chunk.functionCalls !== undefined) {
+          functionCalls.push(...chunk.functionCalls);
+        }
+
+        inputTokens = normalizeTokenCount(chunk.usageMetadata?.promptTokenCount);
+        outputTokens = normalizeTokenCount(chunk.usageMetadata?.candidatesTokenCount);
+      }
+
+      await Promise.all(callbackPromises);
+
+      const text = normalizeText(textParts.join(''));
+      const mappedCalls = mapToolCalls(functionCalls);
+      if (text.length === 0 && mappedCalls.length === 0) {
+        throw new AppError('The LLM returned an empty response.', 'LLM_EMPTY_RESPONSE');
+      }
+
+      return {
+        text,
+        usage: { providerRequests: 1, inputTokens, outputTokens },
+        toolsUsed: mappedCalls.map((call) => call.name),
+        toolCallCount: mappedCalls.length,
+      };
+    } catch (error) {
+      if (error instanceof AppError) {
+        throw error;
+      }
+
+      throw new AppError(
+        'The LLM provider stream failed.',
+        'LLM_STREAM_PROVIDER_ERROR',
+      );
+    }
   }
 
   private async generateContent(
@@ -86,6 +146,32 @@ export class GeminiClient implements LlmClient {
       throw new AppError(
         'The LLM provider request failed.',
         PROVIDER_ERROR_CODE,
+      );
+    }
+  }
+
+  private async generateContentStream(
+    contents: Parameters<GoogleGenAI['models']['generateContentStream']>[0]['contents'],
+    systemInstruction: Content | undefined,
+    tools: ReturnType<typeof mapTools>,
+    maxTokens: number | undefined,
+  ): Promise<AsyncGenerator<GenerateContentResponse>> {
+    try {
+      return await this.client.models.generateContentStream({
+        model: this.model,
+        contents,
+        config: {
+          ...(systemInstruction !== undefined ? { systemInstruction } : {}),
+          ...(maxTokens !== undefined
+            ? { maxOutputTokens: maxTokens }
+            : { maxOutputTokens: this.defaultMaxTokens }),
+          ...(tools.length > 0 ? { tools: [{ functionDeclarations: tools }] } : {}),
+        },
+      });
+    } catch {
+      throw new AppError(
+        'The LLM provider stream failed.',
+        'LLM_STREAM_PROVIDER_ERROR',
       );
     }
   }
