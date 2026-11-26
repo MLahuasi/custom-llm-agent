@@ -63,6 +63,18 @@ documentados arriba. Deben ser enteros positivos.
 
 La configuración de OpenCode usa `CONTEXT7_API_KEY` desde el entorno del proceso. OpenCode no debe asumir que carga automáticamente el `.env` de esta aplicación.
 
+## Contrato LLM y Anthropic
+
+El contrato neutral está en `src/application/ports/llm/` e incluye clientes,
+requests, respuestas, historial, uso y tools. No importa SDKs ni tipos de
+infraestructura.
+
+`src/infrastructure/adapters/llm/anthropic/` implementa `AnthropicClient` con
+`ask`, streaming, historial, ejecución iterativa de tools y métricas normalizadas.
+El cliente Anthropic se inyecta por constructor para permitir composición manual y
+pruebas sin red. Consulta los README locales para las reglas del puerto y del
+adaptador.
+
 ## Arquitectura
 
 El proyecto usa arquitectura hexagonal y Domain-Driven Design:

@@ -1,18 +1,15 @@
 # Adaptadores LLM
 
-Esta carpeta contiene las implementaciones de los puertos de salida que se comunican con proveedores de modelos de lenguaje.
-
-## Proveedores previstos
-
-- Anthropic mediante `@anthropic-ai/sdk`.
-- Gemini mediante `@google/genai`.
-- OpenAI mediante `openai`.
-- Groq mediante `groq-sdk`.
-- Ollama mediante `ollama`.
+Esta carpeta contiene implementaciones de los puertos LLM definidos en
+`src/application/ports/llm/`. Cada proveedor debe permanecer aislado en su propio
+módulo y no debe filtrar tipos del SDK hacia la aplicación.
 
 ## Reglas
 
-- Cada proveedor debe tener un adaptador independiente.
-- Las credenciales se obtienen mediante la utilidad transversal de entorno.
-- Los detalles del SDK no deben filtrarse a los casos de uso.
-- Los errores del proveedor deben normalizarse antes de cruzar la frontera de infraestructura.
+- Inyectar el cliente del proveedor mediante el constructor.
+- Convertir requests, mensajes, tools, respuestas y errores en el contrato neutral.
+- Usar `getLlmDefaults()` para los límites compartidos de iteraciones y tools.
+- Mantener las pruebas sin red ni credenciales reales.
+- Añadir un barrel `index.ts` con exports nombrados explícitos.
+
+Consulta `anthropic/README.md` para el adaptador actualmente implementado.
