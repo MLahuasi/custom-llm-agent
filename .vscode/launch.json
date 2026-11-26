@@ -1,0 +1,18 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug custom-llm-agent",
+      "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/tsx",
+      "runtimeArgs": [
+        "${workspaceFolder}/src/main.ts"
+      ],
+      "cwd": "${workspaceFolder}",
+      "skipFiles": [
+        "<node_internals>/**"
+      ]
+    }
+  ]
+}
