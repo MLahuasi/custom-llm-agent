@@ -48,11 +48,46 @@ export class AnthropicClient implements LlmClient {
     }
   }
 
-  public async stream(_request: LlmRequest): Promise<LlmResponse> {
-    throw new AppError(
-      'Streaming is not implemented yet.',
-      'LLM_STREAM_NOT_IMPLEMENTED',
+  public async stream(request: LlmRequest): Promise<LlmResponse> {
+    const mappedMessages = mapMessages(
+      request.history,
+      request.prompt,
+      request.systemPrompt,
     );
+    const tools = mapTools(request.tools);
+    const callbackPromises: Promise<void>[] = [];
+
+    try {
+      const stream = this.client.messages.stream({
+        model: this.model,
+        max_tokens: request.maxTokens ?? this.defaultMaxTokens,
+        messages: mappedMessages.messages,
+        ...(mappedMessages.system !== undefined
+          ? { system: mappedMessages.system }
+          : {}),
+        ...(tools.length > 0 ? { tools } : {}),
+      });
+
+      stream.on('text', (delta) => {
+        if (request.onChunk !== undefined) {
+          callbackPromises.push(Promise.resolve(request.onChunk(delta)));
+        }
+      });
+
+      const message = await stream.finalMessage();
+      await Promise.all(callbackPromises);
+
+      return normalizeMessage(message);
+    } catch (error) {
+      if (error instanceof AppError) {
+        throw error;
+      }
+
+      throw new AppError(
+        'The LLM provider stream failed.',
+        'LLM_STREAM_PROVIDER_ERROR',
+      );
+    }
   }
 }
 
