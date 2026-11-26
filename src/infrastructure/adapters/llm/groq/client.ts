@@ -35,6 +35,7 @@ export class GroqClient implements LlmClient {
     );
     const tools = mapTools(request.tools);
     const messages: ChatCompletionMessageParam[] = [...mappedMessages.messages];
+    const maxTokens = normalizeOptionalLimit(request.maxTokens, 'maxTokens');
     const defaults = getLlmDefaults();
     const maxIterations = normalizeLimit(
       request.maxIterations,
@@ -59,11 +60,13 @@ export class GroqClient implements LlmClient {
         const response = await this.createCompletion(
           messages,
           tools,
-          request.maxTokens,
+          maxTokens,
         );
+        validateCompletion(response);
         providerRequests += 1;
-        inputTokens += response.usage?.prompt_tokens ?? 0;
-        outputTokens += response.usage?.completion_tokens ?? 0;
+        const usage = normalizeUsage(response.usage);
+        inputTokens += usage.inputTokens;
+        outputTokens += usage.outputTokens;
 
         const choice = response.choices[0];
         if (choice === undefined) {
@@ -146,6 +149,7 @@ export class GroqClient implements LlmClient {
     );
     const tools = mapTools(request.tools);
     const messages: ChatCompletionMessageParam[] = [...mappedMessages.messages];
+    const maxTokens = normalizeOptionalLimit(request.maxTokens, 'maxTokens');
     const textParts: string[] = [];
     const toolsUsed = new Set<string>();
     const seenToolCalls = new Set<string>();
@@ -170,7 +174,7 @@ export class GroqClient implements LlmClient {
         const streamed = await this.consumeStream(
           messages,
           tools,
-          request.maxTokens,
+          maxTokens,
           request.onChunk,
         );
         providerRequests += 1;
@@ -412,19 +416,98 @@ function readUsage(
     return undefined;
   }
 
-  const usage = (chunk as { usage?: unknown }).usage;
-  if (usage === null || typeof usage !== 'object') {
+  if (!('usage' in chunk)) {
     return undefined;
+  }
+
+  const usage = (chunk as { usage?: unknown }).usage;
+  if (usage === undefined || usage === null) {
+    return undefined;
+  }
+  if (typeof usage !== 'object') {
+    throw new AppError(
+      'The LLM provider returned invalid usage metadata.',
+      'LLM_INVALID_RESPONSE',
+    );
   }
 
   const promptTokens = (usage as { prompt_tokens?: unknown }).prompt_tokens;
   const completionTokens = (usage as { completion_tokens?: unknown }).completion_tokens;
-  if (typeof promptTokens !== 'number' || typeof completionTokens !== 'number') {
-    return undefined;
+
+  return {
+    inputTokens: normalizeTokenCount(promptTokens, 'prompt_tokens'),
+    outputTokens: normalizeTokenCount(completionTokens, 'completion_tokens'),
+  };
+}
+
+function validateCompletion(response: ChatCompletion): void {
+  if (response === null || typeof response !== 'object' || !Array.isArray(response.choices)) {
+    throw new AppError(
+      'The LLM provider returned an invalid response.',
+      'LLM_INVALID_RESPONSE',
+    );
+  }
+
+  const choice = response.choices[0];
+  if (choice === undefined || choice.message === null || typeof choice.message !== 'object') {
+    throw new AppError(
+      'The LLM provider returned an invalid response.',
+      'LLM_INVALID_RESPONSE',
+    );
+  }
+
+  const content = choice.message.content;
+  if (content !== undefined && content !== null && typeof content !== 'string') {
+    throw new AppError(
+      'The LLM provider returned invalid response text.',
+      'LLM_INVALID_RESPONSE',
+    );
+  }
+
+  if (choice.message.tool_calls !== undefined && !Array.isArray(choice.message.tool_calls)) {
+    throw new AppError(
+      'The LLM provider returned invalid tool calls.',
+      'LLM_INVALID_RESPONSE',
+    );
+  }
+}
+
+function normalizeUsage(
+  usage: ChatCompletion['usage'],
+): { inputTokens: number; outputTokens: number } {
+  if (usage === undefined || usage === null) {
+    return { inputTokens: 0, outputTokens: 0 };
   }
 
   return {
-    inputTokens: promptTokens,
-    outputTokens: completionTokens,
+    inputTokens: normalizeTokenCount(usage.prompt_tokens, 'prompt_tokens'),
+    outputTokens: normalizeTokenCount(usage.completion_tokens, 'completion_tokens'),
   };
+}
+
+function normalizeTokenCount(value: unknown, name: string): number {
+  if (value === undefined) {
+    return 0;
+  }
+
+  if (typeof value === 'number' && Number.isInteger(value) && value >= 0) {
+    return value;
+  }
+
+  throw new AppError(
+    `The LLM provider returned invalid ${name}.`,
+    'LLM_INVALID_RESPONSE',
+  );
+}
+
+function normalizeOptionalLimit(value: number | undefined, name: string): number | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (!Number.isInteger(value) || value < 1) {
+    throw new AppError(`The ${name} limit is invalid.`, 'LLM_INVALID_LIMIT');
+  }
+
+  return value;
 }
