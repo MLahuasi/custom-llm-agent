@@ -5,7 +5,7 @@ Aplicación de consola construida con Node.js y TypeScript para estudiar la crea
 ## Estado actual
 
 Este proyecto contiene el bootstrap técnico, el contrato LLM neutral y adaptadores
-para Anthropic, Gemini, Groq y OpenAI. La aplicación actualmente solo muestra un mensaje de
+para Anthropic, Gemini, Groq, Ollama y OpenAI. La aplicación actualmente solo muestra un mensaje de
 inicialización:
 
 ```text
@@ -81,6 +81,11 @@ function calls y métricas normalizadas.
 `src/infrastructure/adapters/llm/groq/` implementa `GroqClient` con el mismo
 contrato usando `groq-sdk`, Chat Completions, streaming, reconstrucción de tool
 calls fragmentadas, ejecución iterativa y métricas normalizadas.
+
+`src/infrastructure/adapters/llm/ollama/` implementa `OllamaClient` con el mismo
+contrato usando `ollama`, host configurable, chat, streaming, reconstrucción de
+tool calls, ejecución iterativa y métricas basadas en `prompt_eval_count` y
+`eval_count`.
 
 `src/infrastructure/adapters/llm/openai/` implementa `OpenAiClient` con el mismo
 contrato de chat mediante Responses API. También implementa el puerto separado
