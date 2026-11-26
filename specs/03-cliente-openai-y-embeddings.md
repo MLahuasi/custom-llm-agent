@@ -1,6 +1,6 @@
 # SPEC 03 — Cliente OpenAI y embeddings
 
-> **Estado:** Aprobado
+> **Estado:** Implementado
 > **Depende de:** SPEC 02
 > **Fecha:** 2026-11-26
 > **Objetivo:** Implementar el cliente OpenAI compatible con el contrato común y el adaptador de embeddings de OpenAI usando el mismo estándar de configuración, errores y métricas.
@@ -66,18 +66,18 @@ vectores en esta versión y no expone métricas.
 
 ## Criterios de aceptación
 
-- [ ] `OpenAiClient` implementa `LlmClient` y `EmbeddingClient`.
-- [ ] Chat simple, historial y system prompt funcionan con la respuesta normalizada.
-- [ ] Streaming entrega deltas y respuesta final.
-- [ ] Tools iterativas conservan los items necesarios para Responses API.
-- [ ] Los resultados de tools se asocian mediante `call_id`.
-- [ ] Las tools de OpenAI reutilizan el ejecutor seguro y neutral compartido con Anthropic.
-- [ ] `generateEmbeddings` conserva el orden de los textos.
-- [ ] Un texto vacío, un elemento vacío o una lista vacía se rechaza con `AppError`.
-- [ ] Las métricas de chat acumulan requests y tokens disponibles.
-- [ ] Las operaciones de embeddings devuelven únicamente vectores y no exponen tipos del SDK.
-- [ ] Las pruebas no realizan llamadas de red.
-- [ ] `npm run typecheck`, `npm test` y `npm run build` finalizan correctamente.
+- [x] `OpenAiClient` implementa `LlmClient` y `EmbeddingClient`.
+- [x] Chat simple, historial y system prompt funcionan con la respuesta normalizada.
+- [x] Streaming entrega deltas y respuesta final.
+- [x] Tools iterativas conservan los items necesarios para Responses API.
+- [x] Los resultados de tools se asocian mediante `call_id`.
+- [x] Las tools de OpenAI reutilizan el ejecutor seguro y neutral compartido con Anthropic.
+- [x] `generateEmbeddings` conserva el orden de los textos.
+- [x] Un texto vacío, un elemento vacío o una lista vacía se rechaza con `AppError`.
+- [x] Las métricas de chat acumulan requests y tokens disponibles.
+- [x] Las operaciones de embeddings devuelven únicamente vectores y no exponen tipos del SDK.
+- [x] Las pruebas no realizan llamadas de red.
+- [x] `npm run typecheck`, `npm test` y `npm run build` finalizan correctamente.
 
 ## Decisiones tomadas y descartadas
 
@@ -107,18 +107,3 @@ vectores en esta versión y no expone métricas.
 - RAG y persistencia vectorial.
 - Un cliente de embeddings separado de `OpenAiClient`.
 - Funcionalidades OpenAI fuera de chat y embeddings.
-
----
-
-Plan de implementación
-
-1.  Crear el adaptador OpenAI y sus barrels.
-2.  Añadir EmbeddingClient.
-3.  Compartir el ejecutor seguro de tools con Anthropic.
-4.  Implementar mappers OpenAI.
-5.  Implementar OpenAiClient.ask.
-6.  Implementar OpenAiClient.stream.
-7.  Implementar embeddings.
-8.  Normalizar uso, respuestas y errores.
-9.  Añadir pruebas unitarias sin red.
-10. Actualizar READMEs y ARCHITECTURE.md.
