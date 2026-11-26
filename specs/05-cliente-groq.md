@@ -1,6 +1,6 @@
 # SPEC 05 — Cliente Groq
 
-> **Estado:** Aprobado
+> **Estado:** Implementado
 > **Depende de:** SPEC 04
 > **Fecha:** 2026-11-26
 > **Objetivo:** Implementar el adaptador Groq compatible con el puerto común LLM para chat, streaming, historial, tools iterativas, métricas y errores normalizados.
@@ -36,16 +36,16 @@
 
 ## Criterios de aceptación
 
-- [ ] `GroqClient` implementa `LlmClient`.
-- [ ] Las conversaciones simples y con historial producen `LlmResponse`.
-- [ ] `onChunk` recibe deltas de texto durante streaming.
-- [ ] Las llamadas de tools fragmentadas se reconstruyen correctamente.
-- [ ] Los resultados se vinculan con el ID de cada llamada.
-- [ ] Se aplican límites de tools, iteraciones y duplicados.
-- [ ] Las métricas disponibles se acumulan correctamente.
-- [ ] Los errores del SDK no filtran secretos ni tipos Groq.
-- [ ] Las pruebas no realizan llamadas de red.
-- [ ] `npm run typecheck`, `npm test` y `npm run build` finalizan correctamente.
+- [x] `GroqClient` implementa `LlmClient`.
+- [x] Las conversaciones simples y con historial producen `LlmResponse`.
+- [x] `onChunk` recibe deltas de texto durante streaming.
+- [x] Las llamadas de tools fragmentadas se reconstruyen correctamente.
+- [x] Los resultados se vinculan con el ID de cada llamada.
+- [x] Se aplican límites de tools, iteraciones y duplicados.
+- [x] Las métricas disponibles se acumulan correctamente.
+- [x] Los errores del SDK no filtran secretos ni tipos Groq.
+- [x] Las pruebas no realizan llamadas de red.
+- [x] `npm run typecheck`, `npm test` y `npm run build` finalizan correctamente.
 
 ## Decisiones tomadas y descartadas
 
@@ -67,16 +67,3 @@
 - Ollama.
 - Embeddings, audio, RAG y persistencia.
 - Casos de uso y CLI.
-
----
-
-Plan
-
-1. Crear carpeta y barrel de groq.
-2. Implementar mappers.
-3. Implementar chat no streaming.
-4. Implementar streaming y acumulación de argumentos.
-5. Continuar historial con mensajes assistant/tool.
-6. Normalizar usage, límites y errores.
-7. Añadir pruebas unitarias.
-8. Actualizar documentación y barrels superiores.
