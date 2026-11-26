@@ -1,5 +1,5 @@
-import dotenv from "dotenv";
+import { loadEnvironment } from "./shared/utils/environment.js";
 
-dotenv.config({ quiet: true });
+loadEnvironment();
 
 console.log("Custom LLM Agent initialized.");
