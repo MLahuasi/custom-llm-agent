@@ -60,9 +60,16 @@ export class GeminiClient implements LlmClient {
         tools,
         request.maxTokens,
       );
+      validateResponse(response);
       providerRequests += 1;
-      inputTokens += normalizeTokenCount(response.usageMetadata?.promptTokenCount);
-      outputTokens += normalizeTokenCount(response.usageMetadata?.candidatesTokenCount);
+      inputTokens += normalizeTokenCount(
+        response.usageMetadata?.promptTokenCount,
+        'promptTokenCount',
+      );
+      outputTokens += normalizeTokenCount(
+        response.usageMetadata?.candidatesTokenCount,
+        'candidatesTokenCount',
+      );
 
       const responseText = normalizeText(response.text ?? '');
       if (responseText.length > 0) {
@@ -159,6 +166,7 @@ export class GeminiClient implements LlmClient {
         const modelParts: NonNullable<Content['parts']> = [];
 
         for await (const chunk of stream) {
+          validateResponse(chunk);
           const text = chunk.text ?? '';
           if (text.length > 0) {
             textParts.push(text);
@@ -177,10 +185,16 @@ export class GeminiClient implements LlmClient {
           }
 
           if (chunk.usageMetadata?.promptTokenCount !== undefined) {
-            inputTokens = normalizeTokenCount(chunk.usageMetadata.promptTokenCount);
+            inputTokens = normalizeTokenCount(
+              chunk.usageMetadata.promptTokenCount,
+              'promptTokenCount',
+            );
           }
           if (chunk.usageMetadata?.candidatesTokenCount !== undefined) {
-            outputTokens = normalizeTokenCount(chunk.usageMetadata.candidatesTokenCount);
+            outputTokens = normalizeTokenCount(
+              chunk.usageMetadata.candidatesTokenCount,
+              'candidatesTokenCount',
+            );
           }
         }
 
@@ -326,8 +340,53 @@ function modelContent(
   };
 }
 
-function normalizeTokenCount(value: unknown): number {
-  return typeof value === 'number' && Number.isInteger(value) && value >= 0 ? value : 0;
+function validateResponse(response: GenerateContentResponse): void {
+  if (response === null || typeof response !== 'object') {
+    throw new AppError(
+      'The LLM provider returned an invalid response.',
+      'LLM_INVALID_RESPONSE',
+    );
+  }
+
+  if (response.text !== undefined && typeof response.text !== 'string') {
+    throw new AppError(
+      'The LLM provider returned invalid response text.',
+      'LLM_INVALID_RESPONSE',
+    );
+  }
+
+  if (response.functionCalls !== undefined && !Array.isArray(response.functionCalls)) {
+    throw new AppError(
+      'The LLM provider returned invalid function calls.',
+      'LLM_INVALID_RESPONSE',
+    );
+  }
+
+  const usage = response.usageMetadata;
+  if (usage !== undefined && (usage === null || typeof usage !== 'object')) {
+    throw new AppError(
+      'The LLM provider returned invalid usage metadata.',
+      'LLM_INVALID_RESPONSE',
+    );
+  }
+
+  normalizeTokenCount(usage?.promptTokenCount, 'promptTokenCount');
+  normalizeTokenCount(usage?.candidatesTokenCount, 'candidatesTokenCount');
+}
+
+function normalizeTokenCount(value: unknown, name: string): number {
+  if (value === undefined) {
+    return 0;
+  }
+
+  if (typeof value === 'number' && Number.isInteger(value) && value >= 0) {
+    return value;
+  }
+
+  throw new AppError(
+    `The LLM provider returned invalid ${name}.`,
+    'LLM_INVALID_RESPONSE',
+  );
 }
 
 function normalizeText(text: string): string {
