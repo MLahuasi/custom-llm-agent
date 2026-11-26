@@ -5,7 +5,7 @@ import type {
 import type {
   LlmMessage,
   LlmToolDefinition,
-} from '../../../../application/ports/llm/index.js';
+} from '../../../../application/index.js';
 
 export interface AnthropicMappedMessages {
   system?: string;

@@ -2,7 +2,7 @@ import type {
   LlmToolCall,
   LlmToolDefinition,
   LlmToolExecutor,
-} from '../../../../application/ports/llm/index.js';
+} from '../../../../application/index.js';
 
 export interface ToolExecutionResult {
   id: string;
