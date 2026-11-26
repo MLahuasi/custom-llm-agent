@@ -12,7 +12,7 @@ import type {
   LlmResponse,
 } from '../../../../application/index.js';
 import { mapMessages, mapTools } from './mappers.js';
-import { executeToolCalls } from './tool-executor.js';
+import { executeToolCalls } from '../tool-executor.js';
 
 const PROVIDER_ERROR_CODE = 'LLM_PROVIDER_ERROR';
 

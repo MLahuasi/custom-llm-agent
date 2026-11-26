@@ -2,7 +2,7 @@ import type Anthropic from '@anthropic-ai/sdk';
 import { describe, expect, it, vi } from 'vitest';
 import type { LlmToolCall } from '../../../../../src/application/index.js';
 import { AnthropicClient } from '../../../../../src/infrastructure/adapters/llm/anthropic/client.js';
-import { executeToolCalls } from '../../../../../src/infrastructure/adapters/llm/anthropic/tool-executor.js';
+import { executeToolCalls } from '../../../../../src/infrastructure/adapters/llm/tool-executor.js';
 
 function createSdkMock() {
   return {
