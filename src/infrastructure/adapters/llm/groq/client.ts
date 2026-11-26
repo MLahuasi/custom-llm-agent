@@ -301,6 +301,7 @@ export class GroqClient implements LlmClient {
         for (const toolCall of choice.delta.tool_calls ?? []) {
           const current = toolCalls.get(toolCall.index) ?? { arguments: '' };
           toolCalls.set(toolCall.index, {
+            ...current,
             ...(toolCall.id !== undefined ? { id: toolCall.id } : {}),
             ...(toolCall.function?.name !== undefined
               ? { name: toolCall.function.name }
