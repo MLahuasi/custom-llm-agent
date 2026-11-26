@@ -1,6 +1,6 @@
 # SPEC 06 — Cliente Ollama
 
-> **Estado:** Aprobado
+> **Estado:** Implementado
 > **Depende de:** SPEC 05
 > **Fecha:** 2026-11-26
 > **Objetivo:** Implementar el adaptador Ollama compatible con el puerto común LLM para servidores locales o cloud, chat, streaming, historial, tools, métricas y errores normalizados.
@@ -38,17 +38,17 @@
 
 ## Criterios de aceptación
 
-- [ ] `OllamaClient` implementa `LlmClient`.
-- [ ] El host y el modelo se inyectan por constructor.
-- [ ] El cliente funciona con un servidor local simulado sin red externa.
-- [ ] Chat simple, historial y system prompt se mapean correctamente.
-- [ ] Streaming entrega deltas y respuesta final.
-- [ ] Las tool calls se reconstruyen y sus resultados continúan el historial.
-- [ ] Se aplican límites de tools e iteraciones.
-- [ ] Se normalizan `prompt_eval_count` y `eval_count` cuando están disponibles.
-- [ ] Los errores de conexión y respuesta se convierten en `AppError` seguro.
-- [ ] Las pruebas no requieren un servidor Ollama real.
-- [ ] `npm run typecheck`, `npm test` y `npm run build` finalizan correctamente.
+- [x] `OllamaClient` implementa `LlmClient`.
+- [x] El host y el modelo se inyectan por constructor.
+- [x] El cliente funciona con un servidor local simulado sin red externa.
+- [x] Chat simple, historial y system prompt se mapean correctamente.
+- [x] Streaming entrega deltas y respuesta final.
+- [x] Las tool calls se reconstruyen y sus resultados continúan el historial.
+- [x] Se aplican límites de tools e iteraciones.
+- [x] Se normalizan `prompt_eval_count` y `eval_count` cuando están disponibles.
+- [x] Los errores de conexión y respuesta se convierten en `AppError` seguro.
+- [x] Las pruebas no requieren un servidor Ollama real.
+- [x] `npm run typecheck`, `npm test` y `npm run build` finalizan correctamente.
 
 ## Decisiones tomadas y descartadas
 
@@ -71,16 +71,3 @@
 - Embeddings de Ollama.
 - Gestión de modelos, RAG y persistencia.
 - Casos de uso y CLI.
-
----
-
-Plan
-
-1. Crear carpeta y barrel de Ollama.
-2. Implementar mappers de mensajes y tools.
-3. Implementar chat no streaming.
-4. Implementar streaming y reconstrucción de tool calls.
-5. Continuar historial con mensajes tool.
-6. Normalizar tokens, configuración, límites y errores.
-7. Añadir pruebas unitarias con cliente/fetch simulado.
-8. Actualizar documentación y barrels superiores.
