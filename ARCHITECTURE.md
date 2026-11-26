@@ -152,3 +152,8 @@ An agent must stop and ask when a relevant decision is unresolved. It must not s
 - Tool calls are executed in parallel with deterministic duplicate detection and results returned in original call order. Unknown, invalid, and failed tools produce safe model-facing results.
 - `LLM_MAX_ITERATIONS` and `LLM_MAX_TOOL_CALLS` are shared environment overrides, with positive defaults of `8` and `32`, exposed through `src/shared/utils/llm-config.ts`.
 - Provider error codes remain stable application constants; credentials, provider payloads, and internal error details are never exposed.
+- `OpenAiClient` implements both `LlmClient` and the separate reusable `EmbeddingClient`; embedding operations return vectors only and do not expose usage metrics.
+- `OpenAiClient` receives an already configured OpenAI SDK instance, chat model, embedding model, and default output-token limit through constructor injection. OpenAI credentials are resolved during composition, not inside the adapter.
+- OpenAI chat uses the Responses API. Its manual tool loop preserves response output items and associates `function_call_output` items through `call_id`.
+- The safe, provider-neutral tool executor lives at `src/infrastructure/adapters/llm/tool-executor.ts` and is shared by Anthropic and OpenAI adapters.
+- OpenAI Responses API and function-calling mappings were checked against current OpenAI documentation through Context7; provider-specific SDK types remain isolated in the OpenAI infrastructure module.

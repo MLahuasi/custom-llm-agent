@@ -4,15 +4,17 @@ Aplicación de consola construida con Node.js y TypeScript para estudiar la crea
 
 ## Estado actual
 
-Este proyecto contiene el bootstrap técnico y la estructura base. Actualmente solo muestra un mensaje de inicialización:
+Este proyecto contiene el bootstrap técnico, el contrato LLM neutral y adaptadores
+para Anthropic y OpenAI. La aplicación actualmente solo muestra un mensaje de
+inicialización:
 
 ```text
 Custom LLM Agent initialized.
 ```
 
-El contrato común LLM y el adaptador Anthropic están preparados en la infraestructura,
-pero los casos de uso de agentes, RAG, Function Calling y Tools se incorporarán en
-specs posteriores.
+Los casos de uso de agentes, RAG y persistencia vectorial se incorporarán en specs
+posteriores. Los adaptadores ya encapsulan el chat, el streaming y la ejecución de
+tools necesarias para que esos casos de uso los orquesten.
 
 ## Requisitos
 
@@ -63,7 +65,7 @@ documentados arriba. Deben ser enteros positivos.
 
 La configuración de OpenCode usa `CONTEXT7_API_KEY` desde el entorno del proceso. OpenCode no debe asumir que carga automáticamente el `.env` de esta aplicación.
 
-## Contrato LLM y Anthropic
+## Contrato LLM y adaptadores
 
 El contrato neutral está en `src/application/ports/llm/` e incluye clientes,
 requests, respuestas, historial, uso y tools. No importa SDKs ni tipos de
@@ -71,8 +73,25 @@ infraestructura.
 
 `src/infrastructure/adapters/llm/anthropic/` implementa `AnthropicClient` con
 `ask`, streaming, historial, ejecución iterativa de tools y métricas normalizadas.
-El cliente Anthropic se inyecta por constructor para permitir composición manual y
-pruebas sin red. Consulta los README locales para las reglas del puerto y del
+
+`src/infrastructure/adapters/llm/openai/` implementa `OpenAiClient` con el mismo
+contrato de chat mediante Responses API. También implementa el puerto separado
+`EmbeddingClient` para generar vectores individuales o por lote. Su constructor
+recibe el SDK configurado, el modelo de chat, el modelo de embeddings y el límite
+predeterminado de tokens:
+
+```ts
+const client = new OpenAiClient(
+  openai,
+  'gpt-5',
+  'text-embedding-3-small',
+  1024,
+);
+```
+
+Ambos adaptadores reciben sus clientes SDK por constructor para permitir composición
+manual y pruebas sin red. Las métricas normalizadas aplican al chat; embeddings
+devuelve únicamente vectores. Consulta los README locales para las reglas de cada
 adaptador.
 
 ## Arquitectura

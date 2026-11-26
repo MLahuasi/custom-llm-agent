@@ -65,3 +65,9 @@ export interface LlmClient {
   ask(request: LlmRequest): Promise<LlmResponse>;
   stream(request: LlmRequest): Promise<LlmResponse>;
 }
+
+/** Port for provider-neutral text embedding generation. */
+export interface EmbeddingClient {
+  generateEmbedding(text: string): Promise<number[]>;
+  generateEmbeddings(texts: readonly string[]): Promise<number[][]>;
+}
