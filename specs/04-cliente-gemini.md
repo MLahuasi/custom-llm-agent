@@ -1,6 +1,6 @@
 # SPEC 04 — Cliente Gemini
 
-> **Estado:** Aprobado
+> **Estado:** Implementado
 > **Depende de:** SPEC 03
 > **Fecha:** 2026-11-26
 > **Objetivo:** Implementar el adaptador Gemini compatible con el puerto común LLM para chat, streaming, historial, tools iterativas, métricas y errores normalizados.
@@ -38,16 +38,16 @@
 
 ## Criterios de aceptación
 
-- [ ] `GeminiClient` implementa `LlmClient` sin filtrar tipos Gemini.
-- [ ] Chat simple conserva prompt, historial y system prompt.
-- [ ] Streaming entrega cada delta de texto y la respuesta final.
-- [ ] Function calls se convierten al formato común de tools.
-- [ ] Los resultados de tools continúan correctamente la conversación.
-- [ ] Se aplican límites de tools e iteraciones.
-- [ ] Se normalizan requests y tokens disponibles en `LlmResponse`.
-- [ ] Los errores del proveedor se convierten en `AppError` seguro.
-- [ ] Las pruebas no realizan llamadas de red.
-- [ ] `npm run typecheck`, `npm test` y `npm run build` finalizan correctamente.
+- [x] `GeminiClient` implementa `LlmClient` sin filtrar tipos Gemini.
+- [x] Chat simple conserva prompt, historial y system prompt.
+- [x] Streaming entrega cada delta de texto y la respuesta final.
+- [x] Function calls se convierten al formato común de tools.
+- [x] Los resultados de tools continúan correctamente la conversación.
+- [x] Se aplican límites de tools e iteraciones.
+- [x] Se normalizan requests y tokens disponibles en `LlmResponse`.
+- [x] Los errores del proveedor se convierten en `AppError` seguro.
+- [x] Las pruebas no realizan llamadas de red.
+- [x] `npm run typecheck`, `npm test` y `npm run build` finalizan correctamente.
 
 ## Decisiones tomadas y descartadas
 
@@ -69,16 +69,3 @@
 - Groq y Ollama.
 - Embeddings, Vertex AI y RAG.
 - Funcionalidades multimodales no requeridas.
-
----
-
-Plan de implementación
-
-1. Crear carpeta y barrel de gemini.
-2. Implementar mappers de mensajes y tools.
-3. Implementar GeminiClient.ask.
-4. Implementar GeminiClient.stream.
-5. Reconstruir contenidos y function calls entre iteraciones.
-6. Normalizar tokens, respuestas vacías y errores del SDK.
-7. Añadir pruebas unitarias con respuestas simuladas.
-8. Actualizar documentación y barrels superiores.
