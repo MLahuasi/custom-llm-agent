@@ -46,6 +46,12 @@ export class OpenAiClient implements LlmClient, EmbeddingClient {
         model: this.embeddingModel,
         input: [...texts],
       });
+      if (!Array.isArray(response.data)) {
+        throw new AppError(
+          'The embedding provider returned an invalid response.',
+          'EMBEDDING_INVALID_RESPONSE',
+        );
+      }
       const data = [...response.data].sort((left, right) => left.index - right.index);
 
       if (data.length !== texts.length || data.some((item, index) => item.index !== index)) {
@@ -111,9 +117,11 @@ export class OpenAiClient implements LlmClient, EmbeddingClient {
         tools,
         request.maxTokens,
       );
+      validateResponse(response);
       providerRequests += 1;
-      inputTokens += response.usage?.input_tokens ?? 0;
-      outputTokens += response.usage?.output_tokens ?? 0;
+      const usage = normalizeUsage(response);
+      inputTokens += usage.inputTokens;
+      outputTokens += usage.outputTokens;
 
       const responseText = normalizeText(response.output_text);
       if (responseText.length > 0) {
@@ -204,9 +212,11 @@ export class OpenAiClient implements LlmClient, EmbeddingClient {
         request.onChunk,
       );
       const response = streamed.response;
+      validateResponse(response);
       providerRequests += 1;
-      inputTokens += response.usage?.input_tokens ?? 0;
-      outputTokens += response.usage?.output_tokens ?? 0;
+      const usage = normalizeUsage(response);
+      inputTokens += usage.inputTokens;
+      outputTokens += usage.outputTokens;
 
       const responseText = normalizeText(
         streamed.text.length > 0 ? streamed.text : response.output_text,
@@ -393,6 +403,48 @@ function normalizeLimit(value: number | undefined, fallback: number, name: strin
 
 function normalizeText(text: string): string {
   return text.replace(/\s+/g, ' ').trim();
+}
+
+function validateResponse(response: Response): void {
+  if (response.status !== undefined && response.status !== 'completed') {
+    throw new AppError(
+      'The LLM provider returned an incomplete response.',
+      'LLM_PROVIDER_ERROR',
+    );
+  }
+
+  if (!Array.isArray(response.output) || typeof response.output_text !== 'string') {
+    throw new AppError(
+      'The LLM provider returned an invalid response.',
+      'LLM_INVALID_RESPONSE',
+    );
+  }
+}
+
+function normalizeUsage(response: Response): {
+  inputTokens: number;
+  outputTokens: number;
+} {
+  const usage = response.usage;
+  if (usage === undefined || usage === null) {
+    return { inputTokens: 0, outputTokens: 0 };
+  }
+
+  if (!isNonNegativeInteger(usage.input_tokens) || !isNonNegativeInteger(usage.output_tokens)) {
+    throw new AppError(
+      'The LLM provider returned invalid usage metrics.',
+      'LLM_INVALID_RESPONSE',
+    );
+  }
+
+  return {
+    inputTokens: usage.input_tokens,
+    outputTokens: usage.output_tokens,
+  };
+}
+
+function isNonNegativeInteger(value: unknown): value is number {
+  return typeof value === 'number' && Number.isInteger(value) && value >= 0;
 }
 
 function validateEmbeddingInputs(texts: readonly string[]): void {

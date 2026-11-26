@@ -9,6 +9,7 @@ import type {
   LlmToolCall,
   LlmToolDefinition,
 } from '../../../../application/index.js';
+import { AppError } from '../../../../shared/index.js';
 import type { ToolExecutionResult } from '../tool-executor.js';
 
 export interface OpenAiMappedMessages {
@@ -106,10 +107,15 @@ export function mapToolResult(
 function parseArguments(value: string): Record<string, unknown> {
   try {
     const parsed: unknown = JSON.parse(value);
-    return parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)
-      ? parsed as Record<string, unknown>
-      : {};
+    if (parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      return parsed as Record<string, unknown>;
+    }
   } catch {
-    return {};
+    // Normalize malformed provider arguments below.
   }
+
+  throw new AppError(
+    'The LLM provider returned invalid tool arguments.',
+    'LLM_INVALID_RESPONSE',
+  );
 }
