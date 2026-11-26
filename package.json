@@ -1,0 +1,47 @@
+{
+  "name": "custom-llm-agent",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Console examples for building custom LLM agents",
+  "type": "module",
+  "main": "dist/main.js",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "tsx src/main.ts",
+    "build": "tsc",
+    "start": "node dist/main.js",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MLahuasi/custom-llm-agent.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/MLahuasi/custom-llm-agent/issues"
+  },
+  "homepage": "https://github.com/MLahuasi/custom-llm-agent#readme",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.14.0",
+    "@google/genai": "^3.6.1",
+    "better-sqlite3": "^13.2.0",
+    "dotenv": "^18.0.10",
+    "groq-sdk": "^1.6.0",
+    "ollama": "^0.6.4",
+    "openai": "^7.65.0",
+    "sqlite-vec": "^0.1.9"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/node": "^26.6.11",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.2"
+  }
+}
