@@ -157,3 +157,7 @@ An agent must stop and ask when a relevant decision is unresolved. It must not s
 - OpenAI chat uses the Responses API. Its manual tool loop preserves response output items and associates `function_call_output` items through `call_id`.
 - The safe, provider-neutral tool executor lives at `src/infrastructure/adapters/llm/tool-executor.ts` and is shared by Anthropic and OpenAI adapters.
 - OpenAI Responses API and function-calling mappings were checked against current OpenAI documentation through Context7; provider-specific SDK types remain isolated in the OpenAI infrastructure module.
+- `GeminiClient` receives an already configured `GoogleGenAI` SDK instance, chat model, and default output-token limit through constructor injection. Gemini credentials are resolved during composition, not inside the adapter.
+- Gemini chat uses `generateContent` and `generateContentStream`; manual function calling preserves the shared iteration and tool-call limits instead of using automatic function calling.
+- Gemini `Content`, function declarations, function calls, and function responses remain isolated in the Gemini infrastructure module and are mapped to the neutral LLM contract.
+- Gemini SDK request shapes and streaming behavior were checked against the current `@google/genai` documentation through Context7; tests use simulated SDK responses and never access the network.
