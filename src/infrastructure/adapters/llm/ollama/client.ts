@@ -1,5 +1,5 @@
 import { Ollama } from 'ollama';
-import type { ChatResponse, Fetch, Options } from 'ollama';
+import type { ChatResponse, Fetch, Options, ToolCall } from 'ollama';
 import { AppError } from '../../../../shared/index.js';
 import type {
   LlmClient,
@@ -70,11 +70,76 @@ export class OllamaClient implements LlmClient {
     }
   }
 
-  public async stream(_request: LlmRequest): Promise<LlmResponse> {
-    throw new AppError(
-      'Streaming is not implemented yet.',
-      'LLM_STREAM_NOT_IMPLEMENTED',
+  public async stream(request: LlmRequest): Promise<LlmResponse> {
+    const mappedMessages = mapMessages(
+      request.history,
+      request.prompt,
+      request.systemPrompt,
     );
+    const tools = mapTools(request.tools);
+    const textParts: string[] = [];
+    const toolCalls = new Map<number, ToolCall>();
+    const callbackPromises: Promise<unknown>[] = [];
+    let inputTokens = 0;
+    let outputTokens = 0;
+
+    try {
+      const response = await this.client.chat({
+        model: this.model,
+        messages: mappedMessages.messages,
+        stream: true,
+        ...(tools.length > 0 ? { tools } : {}),
+        options: this.buildOptions(request.maxTokens),
+      });
+
+      for await (const chunk of response) {
+        validateResponse(chunk);
+
+        const text = chunk.message.content;
+        if (text.length > 0) {
+          textParts.push(text);
+          if (request.onChunk !== undefined) {
+            callbackPromises.push(Promise.resolve(request.onChunk(text)));
+          }
+        }
+
+        for (const [index, toolCall] of (chunk.message.tool_calls ?? []).entries()) {
+          const previous = toolCalls.get(index);
+          toolCalls.set(index, mergeToolCall(previous, toolCall));
+        }
+
+        if (chunk.prompt_eval_count !== undefined) {
+          inputTokens = normalizeTokenCount(
+            chunk.prompt_eval_count,
+            'prompt_eval_count',
+          );
+        }
+        if (chunk.eval_count !== undefined) {
+          outputTokens = normalizeTokenCount(chunk.eval_count, 'eval_count');
+        }
+      }
+
+      await Promise.all(callbackPromises);
+
+      const mappedCalls = mapToolCalls([...toolCalls.values()]);
+      const text = normalizeText(textParts.join(''));
+      if (text.length === 0 && mappedCalls.length === 0) {
+        throw new AppError('The LLM returned an empty response.', 'LLM_EMPTY_RESPONSE');
+      }
+
+      return {
+        text,
+        usage: { providerRequests: 1, inputTokens, outputTokens },
+        toolsUsed: [...new Set(mappedCalls.map((call) => call.name))],
+        toolCallCount: mappedCalls.length,
+      };
+    } catch (error) {
+      if (error instanceof AppError) {
+        throw error;
+      }
+
+      throw new AppError('The LLM provider stream failed.', 'LLM_STREAM_PROVIDER_ERROR');
+    }
   }
 
   private buildOptions(maxTokens: number | undefined): Partial<Options> {
@@ -116,4 +181,20 @@ function normalizeTokenCount(value: number | undefined, name: string): number {
 
 function normalizeText(text: string): string {
   return text.trim().replace(/\s+/g, ' ');
+}
+
+function mergeToolCall(previous: ToolCall | undefined, current: ToolCall): ToolCall {
+  if (previous === undefined) {
+    return current;
+  }
+
+  return {
+    function: {
+      name: current.function.name || previous.function.name,
+      arguments: {
+        ...previous.function.arguments,
+        ...current.function.arguments,
+      },
+    },
+  };
 }
