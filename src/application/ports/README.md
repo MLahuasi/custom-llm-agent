@@ -31,7 +31,7 @@ del historial.
 
 Los límites `maxTokens`, `maxIterations` y `maxToolCalls` son opcionales y los
 adaptadores deben aplicar valores seguros cuando no se proporcionen. `onChunk`
-puede ser síncrono o asíncrono.
+puede ser síncrono o asíncrono; cualquier valor que devuelva se ignora.
 
 ### Tools
 

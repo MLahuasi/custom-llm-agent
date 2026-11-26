@@ -131,7 +131,7 @@ export class AnthropicClient implements LlmClient {
       request.systemPrompt,
     );
     const tools = mapTools(request.tools);
-    const callbackPromises: Promise<void>[] = [];
+    const callbackPromises: Promise<unknown>[] = [];
 
     try {
       const stream = this.client.messages.stream({

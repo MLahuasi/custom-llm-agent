@@ -48,7 +48,8 @@ export interface LlmRequest {
   maxTokens?: number;
   maxIterations?: number;
   maxToolCalls?: number;
-  onChunk?: (chunk: string) => void | Promise<void>;
+  /** Return value is ignored; expression-bodied callbacks may return any value. */
+  onChunk?: (chunk: string) => unknown | Promise<unknown>;
 }
 
 /** Normalized result returned by every LLM client implementation. */
