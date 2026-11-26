@@ -5,7 +5,7 @@ Aplicación de consola construida con Node.js y TypeScript para estudiar la crea
 ## Estado actual
 
 Este proyecto contiene el bootstrap técnico, el contrato LLM neutral y adaptadores
-para Anthropic y OpenAI. La aplicación actualmente solo muestra un mensaje de
+para Anthropic, Gemini y OpenAI. La aplicación actualmente solo muestra un mensaje de
 inicialización:
 
 ```text
@@ -73,6 +73,10 @@ infraestructura.
 
 `src/infrastructure/adapters/llm/anthropic/` implementa `AnthropicClient` con
 `ask`, streaming, historial, ejecución iterativa de tools y métricas normalizadas.
+
+`src/infrastructure/adapters/llm/gemini/` implementa `GeminiClient` con el mismo
+contrato usando `@google/genai`, streaming, historial, ejecución iterativa de
+function calls y métricas normalizadas.
 
 `src/infrastructure/adapters/llm/openai/` implementa `OpenAiClient` con el mismo
 contrato de chat mediante Responses API. También implementa el puerto separado
