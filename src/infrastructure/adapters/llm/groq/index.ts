@@ -8,3 +8,4 @@ export {
   mapTools,
 } from './mappers.js';
 export type { GroqMappedMessages } from './mappers.js';
+export { GroqClient } from './client.js';

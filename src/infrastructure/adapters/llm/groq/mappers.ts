@@ -20,14 +20,33 @@ export interface GroqMappedMessages {
 export function mapMessages(
   history: readonly LlmMessage[] = [],
   prompt?: string,
+  systemPrompt?: string,
 ): GroqMappedMessages {
-  const messages = history.map(mapMessage);
+  const systemMessages: string[] = [];
+  const messages: ChatCompletionMessageParam[] = [];
+
+  for (const message of history) {
+    if (message.role === 'system') {
+      systemMessages.push(message.content);
+      continue;
+    }
+
+    messages.push(mapMessage(message));
+  }
 
   if (prompt !== undefined) {
     messages.push({ role: 'user', content: prompt });
   }
 
-  return { messages };
+  if (systemPrompt !== undefined) {
+    systemMessages.push(systemPrompt);
+  }
+
+  return {
+    messages: systemMessages.length > 0
+      ? [{ role: 'system', content: systemMessages.join('\n\n') }, ...messages]
+      : messages,
+  };
 }
 
 export function mapMessage(message: LlmMessage): ChatCompletionMessageParam {
