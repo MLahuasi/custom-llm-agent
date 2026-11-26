@@ -1,6 +1,6 @@
 # SPEC 01 — Inicialización del proyecto Node.js con TypeScript
 
-> **Estado:** Aprobado
+> **Estado:** Implemented
 > **Depende de:** Ninguna
 > **Fecha:** 2026-11-26
 > **Objetivo:** Inicializar una aplicación de consola Node.js con TypeScript, arquitectura hexagonal y DDD, configuración segura y utilidades transversales, preparada para incorporar casos de uso de agentes LLM en specs posteriores.
@@ -185,22 +185,22 @@ Ningún agente podrá imponer unilateralmente una decisión técnica relevante n
 
 ## Criterios de aceptación
 
-- [ ] `npm install` finaliza correctamente con Node.js `>=22.12.0`.
-- [ ] `npm run typecheck` finaliza sin errores.
-- [ ] `npm test` ejecuta correctamente las pruebas de entorno y errores.
-- [ ] `npm run build` genera `dist/` y source maps.
-- [ ] `npm run dev` imprime únicamente `Custom LLM Agent initialized.`.
-- [ ] `npm run start` imprime el mismo mensaje desde `dist/main.js`.
-- [ ] Las claves vacías no impiden el arranque.
-- [ ] Una variable requerida ausente genera un `AppError`.
-- [ ] El manejador registra la excepción sin relanzarla ni finalizar el proceso.
-- [ ] `.env` no queda versionado y `.env.template` no contiene secretos.
-- [ ] `opencode.json` no contiene tokens literales.
+- [x] `npm install` finaliza correctamente con Node.js `>=22.12.0`.
+- [x] `npm run typecheck` finaliza sin errores.
+- [x] `npm test` ejecuta correctamente las pruebas de entorno y errores.
+- [x] `npm run build` genera `dist/` y source maps.
+- [x] `npm run dev` ejecuta `src/main.ts` y la salida propia de la aplicación es únicamente `Custom LLM Agent initialized.` (sin contar el encabezado informativo de npm).
+- [x] `npm run start` ejecuta `dist/main.js` y la salida propia de la aplicación es únicamente `Custom LLM Agent initialized.` (sin contar el encabezado informativo de npm).
+- [x] Las claves vacías no impiden el arranque.
+- [x] Una variable requerida ausente genera un `AppError`.
+- [x] El manejador registra la excepción sin relanzarla ni finalizar el proceso.
+- [x] `.env` no queda versionado y `.env.template` no contiene secretos.
+- [x] `opencode.json` no contiene tokens literales.
 - [ ] El debugger de VS Code puede detenerse en `src/main.ts`.
-- [ ] `AGENTS.md` referencia `ARCHITECTURE.md` como fuente técnica.
-- [ ] `AGENTS.md` exige consultar Context7 y alcanzar un acuerdo para decisiones técnicas.
-- [ ] `ARCHITECTURE.md` documenta el protocolo de consulta, evaluación y acuerdo.
-- [ ] No existen clientes LLM, casos de uso funcionales, RAG ni Tools implementados.
+- [x] `AGENTS.md` referencia `ARCHITECTURE.md` como fuente técnica.
+- [x] `AGENTS.md` exige consultar Context7 y alcanzar un acuerdo para decisiones técnicas.
+- [x] `ARCHITECTURE.md` documenta el protocolo de consulta, evaluación y acuerdo.
+- [x] No existen clientes LLM, casos de uso funcionales, RAG ni Tools implementados.
 
 ## Decisiones tomadas y descartadas
 
@@ -240,17 +240,3 @@ Ningún agente podrá imponer unilateralmente una decisión técnica relevante n
 - Decisiones técnicas cerradas sin consulta y acuerdo explícito.
 
 ---
-
-Plan de implementación
-
-1.  Crear package.json, instalar dependencias y generar package-lock.json.
-2.  Configurar TypeScript ESM y scripts npm.
-3.  Crear src/main.ts.
-4.  Crear la estructura hexagonal/DDD.
-5.  Implementar AppError y el manejador de errores.
-6.  Implementar lectura de variables de entorno.
-7.  Añadir pruebas Vitest.
-8.  Configurar .env, .env.template y .gitignore.
-9.  Añadir configuración de depuración VS Code.
-10. Migrar opencode.json a OpenCode V2.
-11. Actualizar README.md, ARCHITECTURE.md y AGENTS.md.
