@@ -1,6 +1,6 @@
 # SPEC 06 — Cliente Ollama
 
-> **Estado:** Draft
+> **Estado:** Aprobado
 > **Depende de:** SPEC 05
 > **Fecha:** 2026-11-26
 > **Objetivo:** Implementar el adaptador Ollama compatible con el puerto común LLM para servidores locales o cloud, chat, streaming, historial, tools, métricas y errores normalizados.
@@ -60,14 +60,27 @@
 
 ## Riesgos
 
-| Riesgo | Mitigación |
-| --- | --- |
-| El servidor local no está iniciado | Usar mocks en pruebas y documentar el requisito de ejecución. |
+| Riesgo                                              | Mitigación                                                         |
+| --------------------------------------------------- | ------------------------------------------------------------------ |
+| El servidor local no está iniciado                  | Usar mocks en pruebas y documentar el requisito de ejecución.      |
 | Modelos distintos soportan tools de forma diferente | Propagar errores normalizados y probar con respuestas compatibles. |
-| Contadores de tokens ausentes | Mantener cero como valor seguro cuando el servidor no los informe. |
+| Contadores de tokens ausentes                       | Mantener cero como valor seguro cuando el servidor no los informe. |
 
 ## Lo que **no** está incluido en este spec
 
 - Embeddings de Ollama.
 - Gestión de modelos, RAG y persistencia.
 - Casos de uso y CLI.
+
+---
+
+Plan
+
+1. Crear carpeta y barrel de Ollama.
+2. Implementar mappers de mensajes y tools.
+3. Implementar chat no streaming.
+4. Implementar streaming y reconstrucción de tool calls.
+5. Continuar historial con mensajes tool.
+6. Normalizar tokens, configuración, límites y errores.
+7. Añadir pruebas unitarias con cliente/fetch simulado.
+8. Actualizar documentación y barrels superiores.
