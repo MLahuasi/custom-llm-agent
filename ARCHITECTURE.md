@@ -146,3 +146,9 @@ An agent must stop and ask when a relevant decision is unresolved. It must not s
 - Provider credentials are validated at use-case execution time rather than during global startup.
 - Context7 research and explicit agreement are required before closing relevant technical decisions.
 - Barrels with explicit named exports are required at every `src/` directory boundary.
+- LLM providers implement the neutral contract in `src/application/ports/llm/`; provider SDK types remain inside infrastructure adapters.
+- `AnthropicClient` receives the Anthropic SDK client, model, and default token limit through constructor injection. The request-level `maxTokens` overrides the constructor default.
+- Anthropic tool execution uses the manual Messages API loop rather than the beta `messages.toolRunner`, preserving portability for future providers.
+- Tool calls are executed in parallel with deterministic duplicate detection and results returned in original call order. Unknown, invalid, and failed tools produce safe model-facing results.
+- `LLM_MAX_ITERATIONS` and `LLM_MAX_TOOL_CALLS` are shared environment overrides, with positive defaults of `8` and `32`, exposed through `src/shared/utils/llm-config.ts`.
+- Provider error codes remain stable application constants; credentials, provider payloads, and internal error details are never exposed.

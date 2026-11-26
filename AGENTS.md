@@ -4,7 +4,7 @@
 
 This repository contains a private Node.js ESM console application written in TypeScript. Its current entrypoint is `src/main.ts`, and the compiled entrypoint is `dist/main.js`.
 
-The project currently provides the bootstrap, the hexagonal/DDD directory structure, environment utilities, and error handling. Functional LLM agents, RAG, Function Calling, and Tools are out of scope until a later approved spec.
+The project provides the bootstrap, the hexagonal/DDD directory structure, environment utilities, error handling, a provider-neutral LLM port, and an Anthropic adapter. Functional application use cases, RAG, and CLI integration remain out of scope until later approved specs.
 
 ## Runtime and package manager
 
@@ -34,6 +34,7 @@ npm run test:watch
 - `src/application/use-cases` orchestrates application actions.
 - `src/application/ports` defines input and output contracts.
 - `src/infrastructure/adapters` implements external provider and persistence contracts.
+- `src/infrastructure/adapters/llm` contains provider-specific LLM implementations; `anthropic` must remain behind the neutral application port.
 - `src/presentation/cli` handles console input and output only.
 - `src/shared` contains reusable technical utilities and must not contain business rules.
 - Every future example of an agent, RAG flow, Function Calling flow, or Tools flow must be represented as an application use case.
@@ -53,6 +54,7 @@ Read `ARCHITECTURE.md` before changing boundaries, dependencies, providers, pers
 - Validate provider credentials immediately before the use case that needs them.
 - Do not include secret values in error messages, contexts, logs, tests, or documentation.
 - OpenCode reads `CONTEXT7_API_KEY` from the process environment through `opencode.json`; do not put a literal token in configuration.
+- `LLM_MAX_ITERATIONS` and `LLM_MAX_TOOL_CALLS` are shared positive-integer limits for provider tool loops; use `src/shared/utils/llm-config.ts` instead of duplicating provider defaults.
 
 ## Technical decision protocol
 

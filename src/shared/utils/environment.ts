@@ -9,6 +9,8 @@ export const ENVIRONMENT_VARIABLES = {
   ollamaBaseUrl: "OLLAMA_BASE_URL",
   ollamaApiKey: "OLLAMA_API_KEY",
   context7ApiKey: "CONTEXT7_API_KEY",
+  llmMaxIterations: "LLM_MAX_ITERATIONS",
+  llmMaxToolCalls: "LLM_MAX_TOOL_CALLS",
 } as const;
 
 export type EnvironmentVariableName = string;
