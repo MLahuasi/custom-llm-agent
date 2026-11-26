@@ -10,7 +10,9 @@ Este proyecto contiene el bootstrap técnico y la estructura base. Actualmente s
 Custom LLM Agent initialized.
 ```
 
-Los casos de uso de agentes, RAG, Function Calling y Tools se incorporarán en specs posteriores.
+El contrato común LLM y el adaptador Anthropic están preparados en la infraestructura,
+pero los casos de uso de agentes, RAG, Function Calling y Tools se incorporarán en
+specs posteriores.
 
 ## Requisitos
 
@@ -49,8 +51,15 @@ Copia `.env.template` a `.env` y completa únicamente las credenciales que neces
 - `OLLAMA_BASE_URL`
 - `OLLAMA_API_KEY`
 - `CONTEXT7_API_KEY`
+- `LLM_MAX_ITERATIONS`: máximo de iteraciones de proveedor en un bucle de tools; por defecto `8`.
+- `LLM_MAX_TOOL_CALLS`: máximo total de llamadas a tools por operación; por defecto `32`.
 
 `src/shared/utils/environment.ts` expone `loadEnvironment`, `optionalEnv` y `requiredEnv`. Las variables requeridas se validan al ejecutar el caso de uso que las necesita, no durante el arranque global.
+
+`LLM_MAX_ITERATIONS` y `LLM_MAX_TOOL_CALLS` se leen mediante
+`src/shared/utils/llm-config.ts`, por lo que los mismos límites pueden reutilizarse
+en todos los adaptadores LLM. Si no se configuran, se aplican los valores por defecto
+documentados arriba. Deben ser enteros positivos.
 
 La configuración de OpenCode usa `CONTEXT7_API_KEY` desde el entorno del proceso. OpenCode no debe asumir que carga automáticamente el `.env` de esta aplicación.
 
