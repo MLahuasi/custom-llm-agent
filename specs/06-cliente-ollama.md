@@ -1,6 +1,6 @@
 # SPEC 06 — Cliente Ollama
 
-> **Estado:** Draft
+> **Estado:** Implementado
 > **Depende de:** SPEC 05
 > **Fecha:** 2026-11-26
 > **Objetivo:** Implementar el adaptador Ollama compatible con el puerto común LLM para servidores locales o cloud, chat, streaming, historial, tools, métricas y errores normalizados.
@@ -38,17 +38,17 @@
 
 ## Criterios de aceptación
 
-- [ ] `OllamaClient` implementa `LlmClient`.
-- [ ] El host y el modelo se inyectan por constructor.
-- [ ] El cliente funciona con un servidor local simulado sin red externa.
-- [ ] Chat simple, historial y system prompt se mapean correctamente.
-- [ ] Streaming entrega deltas y respuesta final.
-- [ ] Las tool calls se reconstruyen y sus resultados continúan el historial.
-- [ ] Se aplican límites de tools e iteraciones.
-- [ ] Se normalizan `prompt_eval_count` y `eval_count` cuando están disponibles.
-- [ ] Los errores de conexión y respuesta se convierten en `AppError` seguro.
-- [ ] Las pruebas no requieren un servidor Ollama real.
-- [ ] `npm run typecheck`, `npm test` y `npm run build` finalizan correctamente.
+- [x] `OllamaClient` implementa `LlmClient`.
+- [x] El host y el modelo se inyectan por constructor.
+- [x] El cliente funciona con un servidor local simulado sin red externa.
+- [x] Chat simple, historial y system prompt se mapean correctamente.
+- [x] Streaming entrega deltas y respuesta final.
+- [x] Las tool calls se reconstruyen y sus resultados continúan el historial.
+- [x] Se aplican límites de tools e iteraciones.
+- [x] Se normalizan `prompt_eval_count` y `eval_count` cuando están disponibles.
+- [x] Los errores de conexión y respuesta se convierten en `AppError` seguro.
+- [x] Las pruebas no requieren un servidor Ollama real.
+- [x] `npm run typecheck`, `npm test` y `npm run build` finalizan correctamente.
 
 ## Decisiones tomadas y descartadas
 
@@ -60,11 +60,11 @@
 
 ## Riesgos
 
-| Riesgo | Mitigación |
-| --- | --- |
-| El servidor local no está iniciado | Usar mocks en pruebas y documentar el requisito de ejecución. |
+| Riesgo                                              | Mitigación                                                         |
+| --------------------------------------------------- | ------------------------------------------------------------------ |
+| El servidor local no está iniciado                  | Usar mocks en pruebas y documentar el requisito de ejecución.      |
 | Modelos distintos soportan tools de forma diferente | Propagar errores normalizados y probar con respuestas compatibles. |
-| Contadores de tokens ausentes | Mantener cero como valor seguro cuando el servidor no los informe. |
+| Contadores de tokens ausentes                       | Mantener cero como valor seguro cuando el servidor no los informe. |
 
 ## Lo que **no** está incluido en este spec
 

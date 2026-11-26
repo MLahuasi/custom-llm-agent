@@ -165,3 +165,7 @@ An agent must stop and ask when a relevant decision is unresolved. It must not s
 - Groq chat uses Chat Completions from `groq-sdk`; fragmented streaming tool calls are accumulated by index before JSON arguments are parsed.
 - Groq assistant tool-call messages and tool result messages remain inside the Groq infrastructure module while mapping to the neutral LLM contract; the shared tool executor handles parallel execution and duplicate detection.
 - Groq SDK request shapes, Chat Completions tools, and streaming deltas were checked against current `groq-sdk` documentation through Context7; tests use simulated SDK responses and never access the network.
+- `OllamaClient` receives the Ollama host, model, generation options, and an optional fetch implementation through its constructor. The fetch injection keeps local and cloud compositions configurable while allowing tests to avoid network access.
+- Ollama chat uses the official `ollama` client's `chat` method. Streaming tool calls are accumulated by position, while assistant messages and `role: tool` results with `tool_name` are preserved between iterations.
+- Ollama `prompt_eval_count` and `eval_count` are mapped to normalized input and output tokens; absent counters are treated as zero and provider payloads are never exposed in errors.
+- Ollama SDK request shapes, streaming responses, and tool message fields were checked against the current `ollama` v0.6.4 documentation through Context7; tests use an injected simulated fetch and never access a real server.

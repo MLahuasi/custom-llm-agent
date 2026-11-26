@@ -20,4 +20,5 @@ Consulta los README locales:
 - `anthropic/README.md` para el adaptador Anthropic.
 - `gemini/README.md` para el adaptador Gemini.
 - `groq/README.md` para el adaptador Groq.
+- `ollama/README.md` para el adaptador Ollama.
 - `openai/README.md` para el adaptador OpenAI y embeddings.
