@@ -12,4 +12,10 @@ módulo y no debe filtrar tipos del SDK hacia la aplicación.
 - Mantener las pruebas sin red ni credenciales reales.
 - Añadir un barrel `index.ts` con exports nombrados explícitos.
 
-Consulta `anthropic/README.md` para el adaptador actualmente implementado.
+El ejecutor seguro y neutral de tools está en `tool-executor.ts` y es reutilizado
+por todos los proveedores.
+
+Consulta los README locales:
+
+- `anthropic/README.md` para el adaptador Anthropic.
+- `openai/README.md` para el adaptador OpenAI y embeddings.
