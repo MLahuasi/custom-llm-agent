@@ -16,8 +16,8 @@ export interface LlmUsageLimiterOptions {
 
 /** Current state of the in-memory LLM request limiter. */
 export interface LlmUsageLimitStats {
-  usedRequests: number;
-  availableRequests: number;
+  used: number;
+  remaining: number;
   maxRequests: number;
   windowMs: number;
   retryAfterMs: number;
