@@ -107,3 +107,17 @@ Las instancias de los servicios mantendrán estado únicamente en memoria durant
 - Menú CLI y composición desde `main.ts`.
 - Casos de uso, RAG, persistencia y almacenamiento histórico.
 - Nuevos proveedores o dependencias.
+
+---
+
+Plan de implementación
+
+1. Crear módulos security y llm-usage con barrels.
+2. Definir contratos.
+3. Implementar patrones de prompt injection.
+4. Implementar GuardrailsService.
+5. Implementar LlmUsageLimiterService.
+6. Implementar LlmUsageTrackerService.
+7. Actualizar contrato LLM y adaptadores.
+8. Actualizar y agregar pruebas.
+9. Actualizar barrels y documentación.
