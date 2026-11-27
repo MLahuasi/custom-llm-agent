@@ -33,6 +33,8 @@ export interface LlmToolExecutor {
 
 /** Normalized token and request counters for an LLM operation. */
 export interface LlmUsage {
+  provider: string;
+  model: string;
   providerRequests: number;
   inputTokens: number;
   outputTokens: number;

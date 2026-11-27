@@ -140,7 +140,13 @@ export class OpenAiClient implements LlmClient, EmbeddingClient {
 
         return {
           text,
-          usage: { providerRequests, inputTokens, outputTokens },
+          usage: {
+            provider: 'openai',
+            model: this.model,
+            providerRequests,
+            inputTokens,
+            outputTokens,
+          },
           toolsUsed: [...toolsUsed],
           toolCallCount,
         };
@@ -240,7 +246,13 @@ export class OpenAiClient implements LlmClient, EmbeddingClient {
 
         return {
           text,
-          usage: { providerRequests, inputTokens, outputTokens },
+          usage: {
+            provider: 'openai',
+            model: this.model,
+            providerRequests,
+            inputTokens,
+            outputTokens,
+          },
           toolsUsed: [...toolsUsed],
           toolCallCount,
         };

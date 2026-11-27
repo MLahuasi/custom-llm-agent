@@ -27,6 +27,7 @@ export interface LlmUsageLimitStats {
 export interface LlmUsageCost {
   provider: string;
   model: string;
+  providerRequests: number;
   inputTokens: number;
   outputTokens: number;
   inputCost: number | null;
@@ -36,7 +37,6 @@ export interface LlmUsageCost {
 
 /** Aggregated usage and cost for the current in-memory session. */
 export interface LlmUsageSummary {
-  usages: readonly LlmUsageCost[];
   providerRequests: number;
   inputTokens: number;
   outputTokens: number;
