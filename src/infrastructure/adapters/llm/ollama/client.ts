@@ -87,6 +87,7 @@ export class OllamaClient implements LlmClient {
             outputTokens,
             toolsUsed,
             toolCallCount,
+            this.model,
           );
         }
 
@@ -177,6 +178,7 @@ export class OllamaClient implements LlmClient {
             outputTokens,
             toolsUsed,
             toolCallCount,
+            this.model,
           );
         }
 
@@ -299,6 +301,7 @@ function createResponse(
   outputTokens: number,
   toolsUsed: ReadonlySet<string>,
   toolCallCount: number,
+  model: string,
 ): LlmResponse {
   const text = normalizeText(textParts.join(' '));
   if (text.length === 0 && toolCallCount === 0) {
@@ -307,7 +310,13 @@ function createResponse(
 
   return {
     text,
-    usage: { providerRequests, inputTokens, outputTokens },
+    usage: {
+      provider: 'ollama',
+      model,
+      providerRequests,
+      inputTokens,
+      outputTokens,
+    },
     toolsUsed: [...toolsUsed],
     toolCallCount,
   };

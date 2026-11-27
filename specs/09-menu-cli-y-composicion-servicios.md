@@ -1,7 +1,7 @@
-# SPEC 08 — Menú CLI y composición de servicios
+# SPEC 09 — Menú CLI y composición de servicios
 
 > **Estado:** Borrador
-> **Depende de:** SPEC 07
+> **Depende de:** SPEC 08
 > **Fecha:** 2026-11-27
 > **Objetivo:** Reemplazar el mensaje de arranque por un menú interactivo de consola que permita navegar por diez casos de uso provisionales y componga los servicios compartidos de la sesión.
 

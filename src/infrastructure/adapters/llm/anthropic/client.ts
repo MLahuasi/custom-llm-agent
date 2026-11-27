@@ -78,7 +78,13 @@ export class AnthropicClient implements LlmClient {
 
         return {
           text,
-          usage: { providerRequests, inputTokens, outputTokens },
+          usage: {
+            provider: 'anthropic',
+            model: this.model,
+            providerRequests,
+            inputTokens,
+            outputTokens,
+          },
           toolsUsed: [...toolsUsed],
           toolCallCount,
         };
@@ -155,7 +161,7 @@ export class AnthropicClient implements LlmClient {
       const message = await stream.finalMessage();
       await Promise.all(callbackPromises);
 
-      const normalized = normalizeMessage(message);
+      const normalized = normalizeMessage(message, this.model);
       if (normalized.text.length === 0 && normalized.toolCallCount === 0) {
         throw new AppError('The LLM returned an empty response.', 'LLM_EMPTY_RESPONSE');
       }
@@ -196,13 +202,15 @@ export class AnthropicClient implements LlmClient {
   }
 }
 
-function normalizeMessage(message: Message): LlmResponse {
+function normalizeMessage(message: Message, model: string): LlmResponse {
   const text = normalizeText(extractText(message));
   const toolCalls = message.content.filter(isToolUseBlock);
 
   return {
     text,
     usage: {
+      provider: 'anthropic',
+      model,
       providerRequests: 1,
       inputTokens: message.usage.input_tokens,
       outputTokens: message.usage.output_tokens,

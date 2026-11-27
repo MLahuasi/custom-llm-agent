@@ -89,7 +89,13 @@ export class GeminiClient implements LlmClient {
 
         return {
           text,
-          usage: { providerRequests, inputTokens, outputTokens },
+          usage: {
+            provider: 'gemini',
+            model: this.model,
+            providerRequests,
+            inputTokens,
+            outputTokens,
+          },
           toolsUsed: [...toolsUsed],
           toolCallCount,
         };
@@ -212,7 +218,13 @@ export class GeminiClient implements LlmClient {
 
           return {
             text,
-            usage: { providerRequests, inputTokens, outputTokens },
+            usage: {
+              provider: 'gemini',
+              model: this.model,
+              providerRequests,
+              inputTokens,
+              outputTokens,
+            },
             toolsUsed: [...toolsUsed],
             toolCallCount,
           };

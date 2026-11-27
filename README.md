@@ -5,8 +5,9 @@ Aplicación de consola construida con Node.js y TypeScript para estudiar la crea
 ## Estado actual
 
 Este proyecto contiene el bootstrap técnico, el contrato LLM neutral y adaptadores
-para Anthropic, Gemini, Groq, Ollama y OpenAI. La aplicación actualmente solo muestra un mensaje de
-inicialización:
+para Anthropic, Gemini, Groq, Ollama y OpenAI. También contiene servicios neutrales
+de guardrails y seguimiento de consumo en memoria. La aplicación actualmente solo
+muestra un mensaje de inicialización:
 
 ```text
 Custom LLM Agent initialized.
@@ -63,6 +64,12 @@ Copia `.env.template` a `.env` y completa únicamente las credenciales que neces
 en todos los adaptadores LLM. Si no se configuran, se aplican los valores por defecto
 documentados arriba. Deben ser enteros positivos.
 
+Los servicios `GuardrailsService`, `LlmUsageLimiterService` y
+`LlmUsageTrackerService` se configuran y componen explícitamente por la capa de
+aplicación. Sus estados son únicamente en memoria y se pierden al finalizar el
+proceso. El limiter de uso LLM controla llamadas dentro de una ventana temporal;
+el rate limit de guardrails controla entradas aceptadas y son políticas separadas.
+
 La configuración de OpenCode usa `CONTEXT7_API_KEY` desde el entorno del proceso. OpenCode no debe asumir que carga automáticamente el `.env` de esta aplicación.
 
 ## Contrato LLM y adaptadores
@@ -70,6 +77,14 @@ La configuración de OpenCode usa `CONTEXT7_API_KEY` desde el entorno del proces
 El contrato neutral está en `src/application/ports/llm/` e incluye clientes,
 requests, respuestas, historial, uso y tools. No importa SDKs ni tipos de
 infraestructura.
+
+`LlmUsage` es el contrato único de uso normalizado e incluye `provider`, `model`,
+`providerRequests`, `inputTokens` y `outputTokens`. Los servicios se exponen desde
+`src/application/services/` y desde el barrel raíz de application.
+
+`LlmUsageTrackerService` calcula costos estimados para modelos conocidos. Cuando
+un modelo no tiene precio configurado, los costos se devuelven como `null`; no se
+interpreta como costo cero.
 
 `src/infrastructure/adapters/llm/anthropic/` implementa `AnthropicClient` con
 `ask`, streaming, historial, ejecución iterativa de tools y métricas normalizadas.
