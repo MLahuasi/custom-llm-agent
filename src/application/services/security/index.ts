@@ -8,3 +8,5 @@ export {
   INJECTION_PATTERNS,
 } from './injection-patterns.js';
 export type { InjectionPattern } from './injection-patterns.js';
+
+export { GuardrailsService } from './guardrails.service.js';

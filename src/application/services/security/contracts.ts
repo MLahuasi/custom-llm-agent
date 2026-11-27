@@ -14,5 +14,5 @@ export interface RateLimiterConfig {
 /** Configuration used to sanitize and inspect user input. */
 export interface GuardrailsConfig {
   maxInputLength: number;
-  rateLimiter?: RateLimiterConfig;
+  rateLimit: RateLimiterConfig;
 }
