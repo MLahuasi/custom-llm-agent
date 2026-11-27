@@ -1,11 +1,4 @@
-/** Normalized usage returned by an LLM provider adapter. */
-export interface LlmUsage {
-  provider: string;
-  model: string;
-  providerRequests: number;
-  inputTokens: number;
-  outputTokens: number;
-}
+export type { LlmUsage } from '../../ports/index.js';
 
 /** Configuration for the in-memory LLM request limiter. */
 export interface LlmUsageLimiterOptions {

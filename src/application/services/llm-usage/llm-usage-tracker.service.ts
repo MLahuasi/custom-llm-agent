@@ -1,6 +1,6 @@
 import { PRICING } from './pricing.js';
+import type { LlmUsage } from '../../ports/index.js';
 import type {
-  LlmUsage,
   LlmUsageCost,
   LlmUsageSummary,
 } from './contracts.js';

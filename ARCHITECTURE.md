@@ -35,9 +35,9 @@ The domain contains entities, value objects, aggregates, domain services, and bu
 
 ### Application
 
-Paths: `src/application/use-cases`, `src/application/ports`
+Paths: `src/application/use-cases`, `src/application/ports`, `src/application/services`
 
-Use cases orchestrate application actions. Ports define input and output contracts. Application code depends on contracts and domain concepts, never on concrete provider SDKs.
+Use cases orchestrate application actions. Ports define input and output contracts. Application services implement provider-neutral policies such as input guardrails and in-memory usage controls. Application code depends on contracts and domain concepts, never on concrete provider SDKs.
 
 ### Infrastructure
 
@@ -169,3 +169,8 @@ An agent must stop and ask when a relevant decision is unresolved. It must not s
 - Ollama chat uses the official `ollama` client's `chat` method. Streaming tool calls are accumulated by position, while assistant messages and `role: tool` results with `tool_name` are preserved between iterations.
 - Ollama `prompt_eval_count` and `eval_count` are mapped to normalized input and output tokens; absent counters are treated as zero and provider payloads are never exposed in errors.
 - Ollama SDK request shapes, streaming responses, and tool message fields were checked against the current `ollama` v0.6.4 documentation through Context7; tests use an injected simulated fetch and never access a real server.
+- `LlmUsage` is defined once in `src/application/ports/llm/contracts.ts`; usage services re-export and consume that normalized port contract rather than defining a second metric shape.
+- `GuardrailsService` sanitizes input, detects heuristic prompt-injection patterns, and applies its own in-memory input rate limit. It is intentionally separate from the LLM call limiter.
+- `LlmUsageLimiterService` applies an in-memory rolling window and throws `AppError` with code `LLM_USAGE_LIMIT_EXCEEDED` when the configured request budget is exhausted.
+- `LlmUsageTrackerService` stores defensive copies for the current process, aggregates requests and tokens by provider/model, and represents unknown model prices as `null` rather than zero.
+- Application service and port surfaces use explicit named exports through `src/application/services/index.ts` and `src/application/index.ts`; no SDK types cross the application boundary.

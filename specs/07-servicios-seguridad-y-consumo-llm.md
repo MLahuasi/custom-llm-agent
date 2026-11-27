@@ -1,6 +1,6 @@
 # SPEC 07 — Servicios de seguridad y consumo LLM
 
-> **Estado:** Aprobado
+> **Estado:** Implementado
 > **Depende de:** SPEC 06
 > **Fecha:** 2026-11-27
 > **Objetivo:** Incorporar servicios de guardrails, limitación y seguimiento de consumo LLM, junto con el uso normalizado requerido por los adaptadores existentes.
@@ -62,22 +62,22 @@ Las instancias de los servicios mantendrán estado únicamente en memoria durant
 
 ## Criterios de aceptación
 
-- [ ] `GuardrailsService` elimina bytes nulos y caracteres de control no permitidos.
-- [ ] `GuardrailsService` limita entradas según `maxInputLength` y conserva una indicación de truncamiento.
-- [ ] `GuardrailsService` detecta los patrones heurísticos definidos en español e inglés.
-- [ ] Una entrada detectada devuelve `safe: false` y no registra una llamada LLM.
-- [ ] `LlmUsageLimiterService.consume()` registra llamadas dentro de la ventana configurada.
-- [ ] El limiter rechaza una llamada excedida con `AppError` y código `LLM_USAGE_LIMIT_EXCEEDED`.
-- [ ] `getStats()` informa uso, disponibilidad, máximo, ventana y `retryAfterMs`.
-- [ ] `LlmUsageTrackerService` registra y devuelve copias de los consumos de sesión.
-- [ ] El tracker calcula costos de entrada, salida y total por modelo conocido.
-- [ ] El tracker representa con `null` el costo de un modelo sin precio.
-- [ ] Un resumen mixto muestra `totalCost: null` cuando contiene un modelo sin precio.
-- [ ] La agrupación por proveedor y modelo suma requests y tokens correctamente.
-- [ ] `LlmUsage` incluye proveedor y modelo en los cinco adaptadores.
-- [ ] Las pruebas no requieren credenciales, red ni servidores de proveedores.
-- [ ] `npm run typecheck`, `npm test` y `npm run build` finalizan correctamente.
-- [ ] La documentación describe la ubicación, límites y ciclo de vida en memoria de los servicios.
+- [x] `GuardrailsService` elimina bytes nulos y caracteres de control no permitidos.
+- [x] `GuardrailsService` limita entradas según `maxInputLength` y conserva una indicación de truncamiento.
+- [x] `GuardrailsService` detecta los patrones heurísticos definidos en español e inglés.
+- [x] Una entrada detectada devuelve `safe: false` y no registra una llamada LLM.
+- [x] `LlmUsageLimiterService.consume()` registra llamadas dentro de la ventana configurada.
+- [x] El limiter rechaza una llamada excedida con `AppError` y código `LLM_USAGE_LIMIT_EXCEEDED`.
+- [x] `getStats()` informa uso, disponibilidad, máximo, ventana y `retryAfterMs`.
+- [x] `LlmUsageTrackerService` registra y devuelve copias de los consumos de sesión.
+- [x] El tracker calcula costos de entrada, salida y total por modelo conocido.
+- [x] El tracker representa con `null` el costo de un modelo sin precio.
+- [x] Un resumen mixto muestra `totalCost: null` cuando contiene un modelo sin precio.
+- [x] La agrupación por proveedor y modelo suma requests y tokens correctamente.
+- [x] `LlmUsage` incluye proveedor y modelo en los cinco adaptadores.
+- [x] Las pruebas no requieren credenciales, red ni servidores de proveedores.
+- [x] `npm run typecheck`, `npm test` y `npm run build` finalizan correctamente.
+- [x] La documentación describe la ubicación, límites y ciclo de vida en memoria de los servicios.
 
 ## Decisiones tomadas y descartadas
 
