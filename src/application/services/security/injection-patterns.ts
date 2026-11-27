@@ -67,7 +67,7 @@ export const INJECTION_PATTERNS: InjectionPattern[] = [
   },
   {
     name: 'nuevas instrucciones (es)',
-    regex: /nuevas?\s+instrucciones?\s*:/i,
+    regex: /nuevas?\s+instrucci(?:ón|ones)\s*:/i,
   },
   {
     name: 'ignora todo (es)',
