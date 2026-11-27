@@ -81,7 +81,7 @@ describe('GroqClient', () => {
 
     expect(result).toEqual({
       text: 'Hello world',
-      usage: { providerRequests: 1, inputTokens: 7, outputTokens: 4 },
+      usage: { provider: 'groq', model: 'llama-test', providerRequests: 1, inputTokens: 7, outputTokens: 4 },
       toolsUsed: [],
       toolCallCount: 0,
     });
@@ -132,7 +132,7 @@ describe('GroqClient', () => {
     });
     expect(result).toEqual({
       text: 'I will check. It is sunny.',
-      usage: { providerRequests: 2, inputTokens: 13, outputTokens: 8 },
+      usage: { provider: 'groq', model: 'llama-test', providerRequests: 2, inputTokens: 13, outputTokens: 8 },
       toolsUsed: ['weather'],
       toolCallCount: 1,
     });
@@ -205,7 +205,7 @@ describe('GroqClient', () => {
     });
     expect(result).toEqual({
       text: 'I will check. It is sunny.',
-      usage: { providerRequests: 2, inputTokens: 13, outputTokens: 8 },
+      usage: { provider: 'groq', model: 'llama-test', providerRequests: 2, inputTokens: 13, outputTokens: 8 },
       toolsUsed: ['weather'],
       toolCallCount: 1,
     });

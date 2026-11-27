@@ -74,7 +74,7 @@ describe('OpenAiClient', () => {
 
     expect(result).toEqual({
       text: 'Hello world',
-      usage: { providerRequests: 1, inputTokens: 7, outputTokens: 4 },
+      usage: { provider: 'openai', model: 'gpt-test', providerRequests: 1, inputTokens: 7, outputTokens: 4 },
       toolsUsed: [],
       toolCallCount: 0,
     });
@@ -119,7 +119,7 @@ describe('OpenAiClient', () => {
     });
     expect(result).toEqual({
       text: 'I will check. It is sunny.',
-      usage: { providerRequests: 2, inputTokens: 13, outputTokens: 8 },
+      usage: { provider: 'openai', model: 'gpt-test', providerRequests: 2, inputTokens: 13, outputTokens: 8 },
       toolsUsed: ['weather'],
       toolCallCount: 1,
     });
@@ -157,7 +157,7 @@ describe('OpenAiClient', () => {
     expect(chunks).toEqual(['Hello', ' world']);
     expect(result).toEqual({
       text: 'Hello world',
-      usage: { providerRequests: 1, inputTokens: 2, outputTokens: 3 },
+      usage: { provider: 'openai', model: 'gpt-test', providerRequests: 1, inputTokens: 2, outputTokens: 3 },
       toolsUsed: [],
       toolCallCount: 0,
     });
