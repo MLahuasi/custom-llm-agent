@@ -1,6 +1,6 @@
 # SPEC 07 — Servicios de seguridad y consumo LLM
 
-> **Estado:** Borrador
+> **Estado:** Aprobado
 > **Depende de:** SPEC 06
 > **Fecha:** 2026-11-27
 > **Objetivo:** Incorporar servicios de guardrails, limitación y seguimiento de consumo LLM, junto con el uso normalizado requerido por los adaptadores existentes.
@@ -94,12 +94,12 @@ Las instancias de los servicios mantendrán estado únicamente en memoria durant
 
 ## Riesgos
 
-| Riesgo | Mitigación |
-| --- | --- |
+| Riesgo                                                    | Mitigación                                                                              |
+| --------------------------------------------------------- | --------------------------------------------------------------------------------------- |
 | Extender `LlmUsage` rompe respuestas y pruebas existentes | Actualizar los cinco adaptadores y validar typecheck y pruebas antes de cerrar la spec. |
-| Los patrones heurísticos pueden producir falsos positivos | Documentar que la detección no es garantía completa y mantener el catálogo acotado. |
-| Los precios pueden quedar desactualizados | Mantener la tabla aislada y marcar modelos no configurados como costo no disponible. |
-| El estado se pierde al reiniciar la aplicación | Documentar explícitamente que la persistencia pertenece a otra spec. |
+| Los patrones heurísticos pueden producir falsos positivos | Documentar que la detección no es garantía completa y mantener el catálogo acotado.     |
+| Los precios pueden quedar desactualizados                 | Mantener la tabla aislada y marcar modelos no configurados como costo no disponible.    |
+| El estado se pierde al reiniciar la aplicación            | Documentar explícitamente que la persistencia pertenece a otra spec.                    |
 
 ## Lo que **no** está incluido en este spec
 
